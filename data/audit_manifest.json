@@ -20,6 +20,7 @@
     "semua_bab_1_30": true,
     "field_wajib_lengkap": true,
     "duplikat_dalam_bab": false,
-    "semua_halaman_info_terdeteksi": true
+    "semua_halaman_info_terdeteksi": true,
+    "jumlah_per_bab_sinkron": true
   }
 }
