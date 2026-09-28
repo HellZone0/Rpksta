@@ -3,6 +3,7 @@ let vocab = [];
 const app = document.getElementById('app');
 const toast = document.getElementById('toast');
 const infoModal = document.getElementById('infoModal');
+const quizFeedbackModal = document.getElementById('quizFeedbackModal');
 
 const state = {
   view: 'home', chapter: null, search: '', cat: 'Semua', status: 'Semua',
@@ -13,7 +14,7 @@ const state = {
 const STORE = 'epsTopikProgress';
 const SETTINGS = 'epsTopikSettings';
 const CREATOR_SEEN = 'epsTopikCreatorSeen';
-const DATA_VERSION = '20260928-feature-pack-01';
+const DATA_VERSION = '20260928-feature-pack-02-motion';
 
 const defaultProgress = {
   correct: 0, wrong: 0, answered: 0, xp: 0, streak: 0, lastDate: '',
@@ -62,6 +63,39 @@ function closeInfoModal() {
   infoModal.classList.add('hidden');
   localStorage.setItem(CREATOR_SEEN, '1');
   document.body.classList.remove('modal-open');
+}
+function closeQuizFeedback() {
+  quizFeedbackModal?.classList.add('hidden');
+  if (!infoModal || infoModal.classList.contains('hidden')) document.body.classList.remove('modal-open');
+}
+
+function openQuizFeedback({secondChance=false, answer='', onAction}) {
+  if (!quizFeedbackModal) return;
+  const icon = document.getElementById('quizFeedbackIcon');
+  const title = document.getElementById('quizFeedbackTitle');
+  const message = document.getElementById('quizFeedbackMessage');
+  const answerBox = document.getElementById('quizFeedbackAnswer');
+  const action = document.getElementById('quizFeedbackAction');
+  quizFeedbackModal.classList.toggle('is-final', !secondChance);
+  icon.textContent = secondChance ? '✕' : '↻';
+  icon.className = `quiz-feedback-icon ${secondChance ? 'final' : 'retry'}`;
+  title.textContent = secondChance ? 'Jawaban Salah 2×' : 'Jawaban Salah';
+  message.textContent = secondChance ? 'Kedua kesempatan sudah digunakan.' : 'Tenang, kamu masih punya 1 kesempatan untuk soal ini.';
+  if (answer) {
+    answerBox.classList.remove('hidden');
+    answerBox.innerHTML = `<span>Jawaban yang benar</span><strong>${esc(answer)}</strong>`;
+  } else {
+    answerBox.classList.add('hidden');
+    answerBox.innerHTML = '';
+  }
+  action.textContent = secondChance ? 'Soal Berikutnya →' : 'Coba Lagi';
+  action.onclick = () => { closeQuizFeedback(); onAction?.(); };
+  const feedbackCard = quizFeedbackModal.querySelector('.quiz-feedback-card');
+  feedbackCard?.classList.remove('pop-in');
+  quizFeedbackModal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  requestAnimationFrame(() => requestAnimationFrame(() => feedbackCard?.classList.add('pop-in')));
+  setTimeout(() => action.focus(), 80);
 }
 
 document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => show(b.dataset.view)));
@@ -264,8 +298,7 @@ function quizView() {
   const canAnswer=!!selected&&!q.pendingNext&&!q.locked;
   const actionLabel=q.pendingNext?'Soal Berikutnya →':'Jawab';
   const pct=Math.round((q.i/q.pool.length)*100);
-  const feedbackHtml=feedback?`<div class="quiz-feedback ${feedback.type==='correct'?'good':'bad'}" role="status"><strong>${esc(feedback.title)}</strong><span>${esc(feedback.message)}</span>${feedback.answer?`<small>Jawaban yang benar: <strong>${esc(feedback.answer)}</strong></small>`:''}</div>`:'';
-  app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card"><div class="quiz-meta"><span>Soal ${q.i+1}/${q.pool.length}</span><span>Kesempatan: <strong>${Math.max(0,2-attempts)}</strong> dari 2</span></div><div class="quiz-progress"><span style="width:${pct}%"></span></div><div class="quiz-question">${esc(v.korea)}</div><div class="choices">${choices.map(c=>{const isSelected=selected===c.arti;const tried=q.tried?.includes(c.arti);const cls=`choice ${isSelected?'selected':''} ${tried?'tried':''}`;return `<button class="${cls}" data-answer="${encodeURIComponent(c.arti)}" ${tried||q.pendingNext?'disabled':''} aria-pressed="${isSelected?'true':'false'}">${esc(c.arti)}</button>`;}).join('')}</div>${feedbackHtml}<div class="actions quiz-actions"><button class="btn" id="quitQ">Keluar</button><button class="btn primary" id="answerQ" ${canAnswer||q.pendingNext?'':'disabled'}>${actionLabel}</button></div></div></div>`;
+  app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card quiz-card-enter ${q.feedback?.type==='correct'?'quiz-correct':''}"><div class="quiz-meta"><span>Soal ${q.i+1}/${q.pool.length}</span><span>Kesempatan: <strong>${Math.max(0,2-attempts)}</strong> dari 2</span></div><div class="quiz-progress"><span style="width:${pct}%"></span></div><div class="quiz-question">${esc(v.korea)}</div><div class="choices">${choices.map((c,i)=>{const isSelected=selected===c.arti;const tried=q.tried?.includes(c.arti);const cls=`choice ${isSelected?'selected':''} ${tried?'tried':''}`;return `<button class="${cls}" style="--choice-i:${i}" data-answer="${encodeURIComponent(c.arti)}" ${tried||q.pendingNext?'disabled':''} aria-pressed="${isSelected?'true':'false'}">${esc(c.arti)}</button>`;}).join('')}</div><div class="actions quiz-actions"><button class="btn" id="quitQ">Keluar</button><button class="btn primary answer-main-btn" id="answerQ" ${canAnswer||q.pendingNext?'':'disabled'}>${actionLabel}</button></div></div></div>`;
   document.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{if(q.locked||q.pendingNext)return;q.selected=decodeURIComponent(btn.dataset.answer);q.feedback=null;render();});
   document.getElementById('answerQ').onclick=()=>{
     if(q.pendingNext){q.i++;q.attempts=0;q.tried=[];q.choices=null;q.selected=null;q.pendingNext=false;q.feedback=null;q.locked=false;render();return;}
@@ -279,8 +312,29 @@ function quizView() {
       awardXp(10); updateStreak(); q.pendingNext=true; q.locked=false; q.feedback={type:'correct',title:'Jawaban benar!',message:'+10 XP. Tekan “Soal Berikutnya” untuk melanjutkan.'}; save(); checkAchievements(); render(); toastMsg('Benar! +10 XP'); return;
     }
     q.attempts=(q.attempts||0)+1; q.wrong=(q.wrong||0)+1; progress.wrong=(progress.wrong||0)+1; progress.wrongByWord[key]=(progress.wrongByWord[key]||0)+1; delete progress.mastered[key]; q.tried=q.tried||[]; if(!q.tried.includes(answer))q.tried.push(answer); q.selected=null;
-    if(q.attempts<2){q.locked=false;q.feedback={type:'wrong',title:'Jawaban salah.',message:'Kesempatan tersisa 1. Pilih jawaban lain lalu tekan Jawab.'};save();render();toastMsg('Salah. Coba lagi!');}
-    else {progress.answered=(progress.answered||0)+1;progress.seen[key]=true;q.pendingNext=true;q.locked=false;q.feedback={type:'wrong',title:'Jawaban salah 2×.',message:'Kedua kesempatan sudah digunakan.',answer:v.arti};q.review.push({ ...v, correct:false, answer:answer });save();render();toastMsg('Kesempatan habis.');}
+    if(q.attempts<2){
+      q.locked=false;
+      q.feedback={type:'wrong',title:'Jawaban salah.',message:'Kesempatan tersisa 1. Pilih jawaban lain lalu tekan Jawab.'};
+      save(); render();
+      requestAnimationFrame(() => openQuizFeedback({
+        secondChance:false,
+        onAction:()=>{ q.feedback=null; render(); }
+      }));
+    }
+    else {
+      progress.answered=(progress.answered||0)+1;
+      progress.seen[key]=true;
+      q.pendingNext=true;
+      q.locked=false;
+      q.feedback={type:'wrong',title:'Jawaban salah 2×.',message:'Kedua kesempatan sudah digunakan.',answer:v.arti};
+      q.review.push({ ...v, correct:false, answer:answer });
+      save(); render();
+      requestAnimationFrame(() => openQuizFeedback({
+        secondChance:true,
+        answer:v.arti,
+        onAction:()=>{ q.i++; q.attempts=0; q.tried=[]; q.choices=null; q.selected=null; q.pendingNext=false; q.feedback=null; q.locked=false; render(); }
+      }));
+    }
   };
   document.getElementById('quitQ').onclick=()=>{state.quiz=null;show('home');};
   updateActiveNav();

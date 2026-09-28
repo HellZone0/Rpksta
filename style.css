@@ -20,3 +20,57 @@
 .stats-main{margin-top:14px}.chapter-stats{display:grid;gap:4px}.chapter-stat-row{display:grid;grid-template-columns:minmax(180px,1.7fr) minmax(160px,1fr) 72px;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}.chapter-stat-row:last-child{border-bottom:0}.chapter-stat-row small{display:block;color:var(--muted);margin-top:3px;font-size:.73rem}.chapter-mini-progress{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.chapter-mini-progress .progress{height:7px}.chapter-acc{text-align:right}.chapter-acc strong{font-size:1.05rem}.achievement-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.achievement{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:18px;background:var(--surface);opacity:.58}.achievement.earned{opacity:1;border-color:rgba(42,153,255,.3);box-shadow:0 10px 30px rgba(11,94,184,.09)}.achievement-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:var(--surface2);font-size:1.2rem}.achievement strong{font-size:.94rem}.achievement p{margin:3px 0 0;font-size:.76rem;line-height:1.35}.achievement>span{font-size:.9rem}.result-card{text-align:center}.result-score{font-size:clamp(4rem,12vw,7rem);font-weight:950;line-height:1;margin:16px 0 8px;background:linear-gradient(135deg,#5cc1ff,#2585f4);-webkit-background-clip:text;background-clip:text;color:transparent}.result-actions{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:9px;margin-top:20px}.achievement-toast{margin:14px 0;padding:11px;border-radius:13px;background:rgba(244,195,79,.08);border:1px solid rgba(244,195,79,.25);color:#f2c14e}.review-card{margin-top:14px}.section-head.compact{margin:0 0 12px}.review-item{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}.review-item:last-child{border-bottom:0}.review-index{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--surface2);font-weight:900}.review-good .review-index{color:#35d38c}.review-bad .review-index{color:#ff7086}.review-item p{margin:3px 0 0;font-size:.78rem}.review-wrong{color:#ff7086!important}.toast{z-index:120}
 @media(max-width:800px){.achievement-grid{grid-template-columns:1fr}.chapter-stat-row{grid-template-columns:minmax(0,1fr) 58px}.chapter-mini-progress{grid-column:1/-1;grid-row:2}.chapter-acc{grid-column:2;grid-row:1}.flash-controls{grid-template-columns:1fr 1fr}.flash-controls #nextFlash{grid-column:2}.flash-controls #prevFlash{grid-column:1}.level-card{grid-template-columns:minmax(0,1fr) 76px}}
 @media(max-width:650px){.level-card{padding:16px;border-radius:19px}.level-ring{width:68px;height:68px}.level-ring strong{font-size:1.4rem}.feature-card{min-height:170px}.mastery-pills{margin-right:-14px;padding-right:14px}.vocab-item{grid-template-columns:minmax(0,1fr) auto}.vocab-item .cat{display:none}.word-actions{grid-column:2;grid-row:1}.flash-scene,.flash-inner{min-height:350px;height:350px}.flash-face{border-radius:22px;padding:22px}.flash-main{font-size:clamp(2rem,12vw,3.4rem)}.flash-meaning{font-size:clamp(1.5rem,8vw,2.5rem)}.flash-controls{grid-template-columns:1fr 1fr;gap:7px}.result-actions{grid-template-columns:1fr}.review-item{grid-template-columns:32px minmax(0,1fr)}.review-item .btn{grid-column:2;width:max-content}.chapter-stat-row{grid-template-columns:minmax(0,1fr) 55px}.stats-main{gap:10px}}
+
+/* Feature Pack 02 — motion & centered quiz feedback */
+@keyframes pageEnter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes quizCardIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes questionIn{from{opacity:0;transform:translateY(12px) scale(.97);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+@keyframes choiceIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes answerPop{0%{transform:scale(1)}45%{transform:scale(1.035)}100%{transform:scale(1)}}
+@keyframes modalPop{0%{opacity:0;transform:translateY(24px) scale(.92)}65%{opacity:1;transform:translateY(-3px) scale(1.015)}100%{opacity:1;transform:none}}
+@keyframes iconShake{0%,100%{transform:rotate(0)}25%{transform:rotate(-9deg)}75%{transform:rotate(9deg)}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,77,109,0)}50%{box-shadow:0 0 0 10px rgba(255,77,109,.07)}}
+
+.quiz-wrap{animation:pageEnter .32s ease both}
+.quiz-card-enter{animation:quizCardIn .4s cubic-bezier(.2,.75,.2,1) both}
+.quiz-question{animation:questionIn .42s .05s cubic-bezier(.2,.75,.2,1) both}
+.quiz-progress span{transition:width .45s cubic-bezier(.2,.75,.2,1)}
+.choice{animation:choiceIn .35s calc(var(--choice-i,0) * 55ms + .08s) both;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease,opacity .18s ease}
+.choice:hover:not(:disabled){transform:translateY(-2px) scale(1.008);box-shadow:0 10px 25px rgba(15,116,255,.13)}
+.choice.selected{animation:answerPop .25s ease}
+.choice.tried{opacity:.5;text-decoration:line-through;transform:scale(.985)}
+.answer-main-btn:not(:disabled){box-shadow:0 9px 28px rgba(15,116,255,.2)}
+.answer-main-btn:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 13px 32px rgba(15,116,255,.3)}
+
+/* Flashcard motion */
+.flash-scene{transition:transform .2s ease,filter .2s ease}
+.flash-scene:hover{filter:brightness(1.035)}
+.flash-face{transition:box-shadow .3s ease,border-color .3s ease}
+.flash-scene:hover .flash-face{box-shadow:0 25px 65px rgba(0,0,0,.42)}
+.flash-inner{transition:transform .62s cubic-bezier(.18,.82,.2,1)}
+.flash-scene.flipped .flash-inner{transform:rotateY(180deg)}
+.flash-scene.flipped .flash-back .flash-main{animation:questionIn .38s .12s both}
+.flash-scene:not(.flipped) .flash-front .flash-main{animation:questionIn .35s .05s both}
+.flash-controls .btn{transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+.flash-controls .btn:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(15,116,255,.14)}
+.flash-controls .btn:active{transform:translateY(0) scale(.98)}
+
+/* Centered wrong-answer feedback */
+.quiz-feedback-modal{z-index:160;background:rgba(2,7,14,.68);backdrop-filter:blur(9px);animation:fadeIn .18s ease both}
+.quiz-feedback-card{width:min(430px,calc(100vw - 32px));text-align:center;padding:30px 24px 24px;border-color:rgba(255,77,109,.3);box-shadow:0 30px 90px rgba(0,0,0,.5),0 0 55px rgba(255,77,109,.08);opacity:0;transform:translateY(24px) scale(.92)}
+.quiz-feedback-card.pop-in{animation:modalPop .42s cubic-bezier(.2,.8,.2,1) forwards}
+.quiz-feedback-icon{width:68px;height:68px;margin:0 auto 15px;border-radius:22px;display:grid;place-items:center;font-size:1.65rem;font-weight:950;color:#fff;background:linear-gradient(135deg,#ff5b78,#e92f55);box-shadow:0 14px 35px rgba(255,77,109,.24);animation:iconShake .45s ease,glowPulse 1.4s .45s ease infinite}
+.quiz-feedback-icon.retry{background:linear-gradient(135deg,#ffb84d,#ff5b62)}
+.quiz-feedback-icon.final{background:linear-gradient(135deg,#ff4d6d,#b9163b)}
+.quiz-feedback-card h2{margin:0 0 8px;font-size:1.65rem}
+.quiz-feedback-card p{margin:0 auto;max-width:340px;line-height:1.55}
+.quiz-feedback-answer{margin:17px 0;padding:13px 15px;border-radius:15px;border:1px solid rgba(32,212,122,.25);background:rgba(32,212,122,.07);display:grid;gap:3px}
+.quiz-feedback-answer span{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:800}
+.quiz-feedback-answer strong{font-size:1.12rem;color:#35d38c}
+.quiz-feedback-answer.hidden{display:none}
+.feedback-action{width:100%;margin-top:19px;min-height:48px}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+@media(max-width:650px){.quiz-feedback-card{padding:27px 18px 20px;border-radius:22px}.quiz-feedback-icon{width:62px;height:62px}.quiz-feedback-card h2{font-size:1.45rem}.feedback-action{margin-top:16px}}
+@keyframes correctGlow{0%{box-shadow:var(--shadow)}45%{box-shadow:0 0 0 3px rgba(32,212,122,.16),0 22px 65px rgba(32,212,122,.14)}100%{box-shadow:var(--shadow)}}
+.quiz-correct{animation:quizCardIn .4s cubic-bezier(.2,.75,.2,1) both,correctGlow .8s .1s ease both}

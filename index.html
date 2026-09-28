@@ -25,6 +25,16 @@
     <button data-view="stats"><span>▥</span><span>Statistik</span></button>
   </nav>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="quizFeedbackModal" class="modal-overlay quiz-feedback-modal hidden" role="dialog" aria-modal="true" aria-labelledby="quizFeedbackTitle">
+    <div class="modal-card quiz-feedback-card">
+      <div id="quizFeedbackIcon" class="quiz-feedback-icon">!</div>
+      <div class="eyebrow" id="quizFeedbackEyebrow">LATIHAN SOAL</div>
+      <h2 id="quizFeedbackTitle">Jawaban Salah</h2>
+      <p id="quizFeedbackMessage" class="muted"></p>
+      <div id="quizFeedbackAnswer" class="quiz-feedback-answer hidden"></div>
+      <button id="quizFeedbackAction" class="btn primary feedback-action">Coba Lagi</button>
+    </div>
+  </div>
   <div id="infoModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
     <div class="modal-card creator-modal">
       <button id="closeInfo" class="modal-close" aria-label="Tutup">×</button><div class="creator-mark">한</div>
