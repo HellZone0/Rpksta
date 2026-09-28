@@ -1,0 +1,15 @@
+{
+  "dataset_version": "20260928-typo-audit-03",
+  "source": "EPS TOPIK TB I TRANS INDO 2024.pdf",
+  "entries": 2355,
+  "korean_not_found_in_pdf": 0,
+  "formatting_issues": 0,
+  "known_typo_checked": {
+    "발치다": "받치다",
+    "found_in_dataset": [],
+    "status": "correct"
+  },
+  "confirmed_corrections_applied": [],
+  "note": "No confirmed spelling typo was found in the current vocabulary dataset. The screenshot term is correctly stored as 받치다. Indonesian meanings that are paraphrases rather than verbatim textbook wording were not silently rewritten.",
+  "duplicate_korean_same_bab_same_source": 0
+}
