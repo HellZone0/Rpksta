@@ -3,44 +3,37 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0b1220">
+  <meta name="theme-color" content="#07111f">
   <meta name="description" content="Latihan kosakata EPS-TOPIK Bab 1–30 dalam Bahasa Indonesia.">
-  <title>EPS-TOPIK — Latihan Kosakata</title>
+  <title>EPS-TOPIK — Kosakata Korea</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topbar">
     <button class="brand" data-view="home" aria-label="Kembali ke Beranda"><span class="brand-mark">한</span><span>EPS-TOPIK</span></button>
     <nav class="nav" aria-label="Navigasi utama">
-      <button data-view="home">Beranda</button>
-      <button data-view="chapters">Bab</button>
-      <button data-view="vocab">Kosakata</button>
-      <button data-view="flashcards">Kartu Belajar</button>
-      <button data-view="quiz">Latihan Soal</button>
-      <button data-view="stats">Statistik</button>
+      <button data-view="home">Beranda</button><button data-view="chapters">Bab</button><button data-view="vocab">Kosakata</button><button data-view="flashcards">Kartu Belajar</button><button data-view="quiz">Latihan Soal</button><button data-view="stats">Statistik</button>
     </nav>
     <button id="themeBtn" class="icon-btn" title="Mode gelap/terang" aria-label="Mode gelap/terang">◐</button>
   </header>
-
   <main id="app" class="container"></main>
-
+  <nav class="bottom-nav" aria-label="Navigasi mobile">
+    <button data-view="home"><span>⌂</span><span>Beranda</span></button>
+    <button data-view="chapters"><span>▤</span><span>Bab</span></button>
+    <button data-view="quiz"><span>✎</span><span>Latihan</span></button>
+    <button data-view="flashcards"><span>▣</span><span>Kartu</span></button>
+    <button data-view="stats"><span>▥</span><span>Statistik</span></button>
+  </nav>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-  <div id="infoModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+  <div id="infoModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
     <div class="modal-card creator-modal">
-      <button id="closeInfo" class="modal-close" aria-label="Tutup">×</button>
-      <div class="creator-mark">한</div>
-      <div class="cat">EPS-TOPIK 한국어 어휘</div>
-      <h2 id="infoTitle">Website ini dibuat oleh Muhammad Ahda</h2>
-      <p class="muted">Terima kasih sudah menggunakan website latihan kosakata EPS-TOPIK Bab 1–30. Selamat belajar dan semoga membantu persiapanmu.</p>
-      <div class="social-actions">
-        <a class="btn social-btn" href="https://www.instagram.com/minns0?stkn=MWRkcDBnYnoxMjI3NA%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer">Instagram · @minns0</a>
-        <a class="btn social-btn" href="https://www.tiktok.com/@arexsyy" target="_blank" rel="noopener noreferrer">TikTok · @arexsyy</a>
-      </div>
+      <button id="closeInfo" class="modal-close" aria-label="Tutup">×</button><div class="creator-mark">한</div>
+      <div class="cat">EPS-TOPIK 한국어 어휘</div><h2 id="infoTitle">Website ini dibuat oleh Muhammad Ahda</h2>
+      <p class="muted">Terima kasih sudah menggunakan website latihan kosakata EPS-TOPIK Bab 1–30. Selamat belajar.</p>
+      <div class="social-actions"><a class="btn social-btn" href="https://www.instagram.com/minns0?stkn=MWRkcDBnYnoxMjI3NA%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer">Instagram · @minns0</a><a class="btn social-btn" href="https://www.tiktok.com/@arexsyy" target="_blank" rel="noopener noreferrer">TikTok · @arexsyy</a></div>
       <button id="closeInfoBottom" class="btn primary modal-continue">Mulai Belajar</button>
     </div>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
