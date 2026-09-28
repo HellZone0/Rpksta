@@ -57,3 +57,21 @@ Laporan audit memeriksa 30/30 halaman `문화와 정보`, keberadaan Bab 1–30,
 - Popup pembuat hanya muncul pada kunjungan pertama di perangkat/browser.
 - Modal jawaban lama yang tidak digunakan dihapus; feedback kuis tetap inline.
 - Cache-busting dataset dinaikkan ke `20260928-quizfix-02`.
+
+
+## Audit typo terbaru
+Versi dataset: `20260928-typo-audit-03`. Pemeriksaan ejaan Korea terhadap PDF sumber telah dilakukan; lihat `TYPO_AUDIT.md` dan `data/typo_audit.json`.
+
+## Feature Pack 01 — 2026-09-28
+
+Pembaruan UI/fitur yang ditambahkan:
+- Status penguasaan kosakata: Belum dipelajari, Perlu latihan, Sering salah, Dikuasai.
+- Filter kosakata berdasarkan status dan indikator kesalahan/favorit.
+- Statistik lebih detail: akurasi, streak, XP, penguasaan total, progress dan akurasi per Bab 1–30.
+- Kartu Belajar dengan animasi flip 3D, tombol “Perlu diulang” dan “Saya tahu”.
+- Achievement/Pencapaian yang tersimpan di localStorage.
+- Sistem Level berbasis XP.
+- Mobile bottom navigation: Beranda, Kosakata, Latihan, Kartu, Statistik.
+- Tinjau Jawaban setelah quiz untuk soal yang pernah salah, dengan shortcut kembali ke Kartu Belajar.
+
+Data tetap menggunakan `data/vocabulary.json` (2.355 entri) dan `data/chapters.json` (30 Bab).
