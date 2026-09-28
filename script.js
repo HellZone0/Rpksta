@@ -2,7 +2,6 @@ let chapters = []; let vocab = [];
 const app = document.getElementById('app');
 const toast = document.getElementById('toast');
 const infoModal = document.getElementById('infoModal');
-const wrongModal = document.getElementById('wrongModal');
 const state = {
   view: 'home', chapter: null, search: '', cat: 'Semua',
   flashIndex: 0, flashShow: false,
@@ -10,16 +9,22 @@ const state = {
 };
 const STORE='epsTopikProgress';
 const SETTINGS='epsTopikSettings';
-let progress=JSON.parse(localStorage.getItem(STORE)||'{"correct":0,"wrong":0,"answered":0,"xp":0,"streak":0,"lastDate":"","seen":{}}');
-let settings=JSON.parse(localStorage.getItem(SETTINGS)||'{"theme":"light"}');
+const CREATOR_SEEN='epsTopikCreatorSeen';
+const DATA_VERSION='20260928-quizfix-02';
+function readJSON(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback));}catch(e){localStorage.removeItem(key);return fallback;}}
+let progress=readJSON(STORE,{correct:0,wrong:0,answered:0,xp:0,streak:0,lastDate:'',seen:{}});
+let settings=readJSON(SETTINGS,{theme:'light'});
 
 document.documentElement.dataset.theme=settings.theme==='dark'?'dark':'light';
 
 async function init(){
   try{
-    [chapters,vocab]=await Promise.all([fetch('data/chapters.json').then(r=>r.json()),fetch('data/vocabulary.json').then(r=>r.json())]);
+    [chapters,vocab]=await Promise.all([
+      fetch(`data/chapters.json?v=${DATA_VERSION}`,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(`chapters.json: HTTP ${r.status}`);return r.json()}),
+      fetch(`data/vocabulary.json?v=${DATA_VERSION}`,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(`vocabulary.json: HTTP ${r.status}`);return r.json()})
+    ]);
     render();
-    openInfoModal();
+    if(localStorage.getItem(CREATOR_SEEN)!=='1') openInfoModal();
   }catch(e){app.innerHTML='<div class="card"><h2>Data tidak dapat dimuat</h2><p class="muted">Pastikan folder data/ ikut diunggah dan website dijalankan melalui server.</p></div>';console.error(e)}
 }
 
@@ -30,9 +35,12 @@ function openInfoModal(){
 }
 function closeInfoModal(){
   infoModal.classList.add('hidden');
-  if(wrongModal.classList.contains('hidden')) document.body.classList.remove('modal-open');
+  localStorage.setItem(CREATOR_SEEN,'1');
+  document.body.classList.remove('modal-open');
 }
-function showWrongModal(message, isFinal=false){
+/* Legacy wrong-answer modal removed: quiz feedback is rendered inline so the
+   user can always choose another answer or continue to the next question. */
+/* function showWrongModal(message, isFinal=false){
   document.getElementById('wrongMessage').textContent=message;
   const box=document.getElementById('correctAnswerBox');
   const action=document.getElementById('wrongAction');
@@ -59,6 +67,8 @@ function showWrongModal(message, isFinal=false){
   setTimeout(()=>action.focus(),50);
 }
 
+*/
+
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
 document.getElementById('themeBtn').addEventListener('click',()=>{settings.theme=settings.theme==='dark'?'light':'dark';localStorage.setItem(SETTINGS,JSON.stringify(settings));document.documentElement.dataset.theme=settings.theme==='dark'?'dark':'light';});
 
@@ -66,7 +76,17 @@ function save(){localStorage.setItem(STORE,JSON.stringify(progress));}
 function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 function toastMsg(s){toast.textContent=s;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1700)}
 function itemsFor(ch){return vocab.filter(v=>v.bab===ch)}
-function show(view,opts={}){state.view=view;if(opts.chapter)state.chapter=Number(opts.chapter);if(view!=='vocab')state.search='';render();window.scrollTo({top:0,behavior:'smooth'})}
+function show(view,opts={}){
+  state.view=view;
+  if(opts.chapter){
+    const nextChapter=Number(opts.chapter);
+    if(state.chapter!==nextChapter) state.cat='Semua';
+    state.chapter=nextChapter;
+  }
+  if(view!=='vocab')state.search='';
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 function render(){
   if(state.view==='home') return home();
   if(state.view==='chapters') return chapterList();
@@ -77,17 +97,20 @@ function render(){
 }
 function home(){
  const total=vocab.length, answered=progress.answered||0;
- app.innerHTML=`<section class="hero"><div><div class="cat">EPS-TOPIK 한국어 어휘</div><h1>Belajar kosakata Korea lebih terarah.</h1><p>Pelajari dan uji kosakata EPS-TOPIK Bab 1–30. Pilih bab untuk melihat seluruh kosakata dari sumber yang digunakan.</p><div class="actions"><button class="btn primary" data-action="chapters">Lihat Bab 1–30</button><button class="btn" data-action="quiz">Mulai Latihan Soal</button></div></div><div class="hero-card"><span>Total kosakata</span><strong>${total.toLocaleString('id-ID')}</strong><span>tersedia dari Bab 1–30</span><hr><span>Sudah dijawab</span><strong>${answered}</strong></div></section>
+ const mainCount=vocab.filter(v=>v.sumber==='어휘').length;
+ const infoCount=total-mainCount;
+ app.innerHTML=`<section class="hero"><div><div class="cat">EPS-TOPIK 한국어 어휘</div><h1>Belajar kosakata Korea lebih terarah.</h1><p>Pelajari dan uji kosakata EPS-TOPIK Bab 1–30. Pilih bab untuk melihat seluruh kosakata dari sumber yang digunakan.</p><div class="actions"><button class="btn primary" data-action="chapters">Lihat Bab 1–30</button><button class="btn" data-action="quiz">Mulai Latihan Soal</button></div></div><div class="hero-card"><span>Total kosakata</span><strong>${total.toLocaleString('id-ID')}</strong><span>Bab 1–30 · ${mainCount.toLocaleString('id-ID')} utama + ${infoCount.toLocaleString('id-ID')} 정보</span><span class="source-note">Dataset ${DATA_VERSION}</span><hr><span>Sudah dijawab</span><strong>${answered}</strong></div></section>
  <div class="section-head"><h2>Bab yang tersedia</h2><button class="btn" data-action="chapters">Lihat semua</button></div><div class="grid">${chapters.slice(0,6).map(chapterCard).join('')}</div>
  <div class="section-head"><h2>Fitur belajar</h2></div><div class="grid"><div class="card"><h3>📚 Kosakata lengkap</h3><p class="muted">Pilih bab dan lihat kosakata berdasarkan kelompoknya.</p></div><div class="card"><h3>🃏 Kartu Belajar</h3><p class="muted">Balik kartu untuk melihat arti Indonesia.</p></div><div class="card"><h3>✏️ Latihan Soal</h3><p class="muted">Uji Korea → Indonesia, Indonesia → Korea, dan mode campuran.</p></div><div class="card"><h3>📊 Statistik</h3><p class="muted">Kemajuan disimpan di perangkat menggunakan localStorage.</p></div></div>`;
  bindActions();
 }
-function chapterCard(c){return `<div class="card chapter-card"><div><span class="chapter-num">BAB ${c.bab}</span><h3>${esc(c.korea)}</h3><p>${esc(c.indonesia)}</p></div><div><span class="count">${c.jumlahKosakata} kosakata</span><button class="btn" style="float:right" data-open="${c.bab}">Buka</button></div></div>`}
+function chapterCard(c){const actualCount=vocab.length?itemsFor(c.bab).length:Number(c.jumlahKosakata||0);return `<div class="card chapter-card"><div><span class="chapter-num">BAB ${c.bab}</span><h3>${esc(c.korea)}</h3><p>${esc(c.indonesia)}</p></div><div><span class="count">${actualCount} kosakata</span><button class="btn" style="float:right" data-open="${c.bab}">Buka</button></div></div>`}
 function chapterList(){app.innerHTML=`<div class="section-head"><div><h1>Bab 1–30</h1><p class="muted">Pilih bab untuk melihat seluruh kosakatanya.</p></div></div><div class="grid">${chapters.map(chapterCard).join('')}</div>`;bindActions();}
 function vocabView(){
  const ch=state.chapter;
  const base=ch?itemsFor(ch):vocab;
  const cats=[...new Set(base.map(v=>v.kategori))];
+ if(state.cat!=='Semua' && !cats.includes(state.cat)) state.cat='Semua';
  const list=base.filter(v=>(state.cat==='Semua'||v.kategori===state.cat)&&((v.korea+' '+v.arti).toLowerCase().includes(state.search.toLowerCase())));
  app.innerHTML=`<div class="section-head"><div><h1>${ch?`Bab ${ch} — ${esc(chapters[ch-1].korea)}`:'Semua Kosakata'}</h1><p class="muted">${ch?esc(chapters[ch-1].indonesia):'Kosakata EPS-TOPIK Bab 1–30'}</p></div><button class="btn" data-action="chapters">Daftar Bab</button></div>
  <div class="toolbar"><input id="vsearch" class="search" placeholder="Cari kosakata Korea atau arti Indonesia..." value="${esc(state.search)}"><select id="vcat" class="select"><option>Semua</option>${cats.map(x=>`<option ${x===state.cat?'selected':''}>${esc(x)}</option>`).join('')}</select>${ch?`<button class="btn primary" data-flash="${ch}">Kartu Bab Ini</button>`:''}</div>
@@ -108,25 +131,93 @@ function flashcards(){
  bindActions();
 }
 function startQuiz(){
- const ch=state.chapter||null;const pool=(ch?itemsFor(ch):vocab).slice();
- const count=Math.min(10,pool.length); pool.sort(()=>Math.random()-.5);state.quiz={pool:pool.slice(0,count),i:0,score:0,wrong:0,mode:'campuran',locked:false,attempts:0,tried:[],choices:null};
+ const ch=state.chapter||null;
+ const pool=(ch?itemsFor(ch):vocab).slice().sort(()=>Math.random()-.5);
+ const count=Math.min(10,pool.length);
+ state.quiz={pool:pool.slice(0,count),questionCount:count,i:0,score:0,wrong:0,mode:'campuran',locked:false,attempts:0,tried:[],choices:null,selected:null,pendingNext:false,feedback:null};
  show('quiz');
 }
 function makeChoices(v,pool){
- const others=pool.filter(x=>x!==v);others.sort(()=>Math.random()-.5);const vals=[v,...others.slice(0,3)];return vals.sort(()=>Math.random()-.5)}
+ const result=[v];
+ const used=new Set([v.arti]);
+ const candidates=pool.filter(x=>x!==v).slice().sort(()=>Math.random()-.5);
+ // Prefer distractors from the current quiz pool, but never repeat the same
+ // Indonesian meaning. If needed, fall back to the full dataset.
+ for(const x of candidates){
+   if(!used.has(x.arti)){ result.push(x); used.add(x.arti); if(result.length===4) break; }
+ }
+ if(result.length<4){
+   const fallback=vocab.slice().sort(()=>Math.random()-.5);
+   for(const x of fallback){
+     if(x!==v && !used.has(x.arti)){ result.push(x); used.add(x.arti); if(result.length===4) break; }
+   }
+ }
+ return result.sort(()=>Math.random()-.5);
+}
+function makeQuizState(pool,n){
+ return {pool:pool.slice(0,n),questionCount:n,i:0,score:0,wrong:0,mode:'campuran',locked:false,attempts:0,tried:[],choices:null,selected:null,pendingNext:false,feedback:null};
+}
 function quizView(){
- if(!state.quiz){app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card"><h1>Latihan Soal</h1><p class="muted">Uji kosakata secara acak. Setiap soal memiliki <strong>2 kesempatan</strong> menjawab.</p><div class="two-col"><label>Bab<select id="qchap" class="select" style="width:100%"><option value="">Semua Bab</option>${chapters.map(c=>`<option value="${c.bab}" ${state.chapter===c.bab?'selected':''}>Bab ${c.bab} — ${esc(c.korea)}</option>`).join('')}</select></label><label>Jumlah soal<select id="qcount" class="select" style="width:100%"><option>10</option><option>20</option><option>30</option><option>50</option><option>100</option><option>Semua</option></select></label></div><div class="notice" style="margin-top:16px">Jika jawaban pertama salah, soal tetap sama dan kamu mendapat 1 kesempatan lagi.</div><div class="actions"><button class="btn primary" id="startQ">Mulai Latihan</button></div></div></div>`;document.getElementById('startQ').onclick=()=>{state.chapter=Number(document.getElementById('qchap').value)||null;const pool=(state.chapter?itemsFor(state.chapter):vocab).slice().sort(()=>Math.random()-.5);const selected=document.getElementById('qcount').value;const requested=selected==='Semua'?pool.length:Number(selected);const n=Math.min(requested,pool.length);state.quiz={pool:pool.slice(0,n),i:0,score:0,wrong:0,locked:false,attempts:0,tried:[],choices:null};render()};return}
+ if(!state.quiz){
+   app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card"><h1>Latihan Soal</h1><p class="muted">Uji kosakata secara acak. Setiap soal memiliki <strong>2 kesempatan</strong> menjawab.</p><div class="two-col"><label>Bab<select id="qchap" class="select" style="width:100%"><option value="">Semua Bab</option>${chapters.map(c=>`<option value="${c.bab}" ${state.chapter===c.bab?'selected':''}>Bab ${c.bab} — ${esc(c.korea)}</option>`).join('')}</select></label><label>Jumlah soal<select id="qcount" class="select" style="width:100%"><option>10</option><option>20</option><option>30</option><option>50</option><option>100</option><option>Semua</option></select></label></div><div class="notice" style="margin-top:16px">Pilih jawaban terlebih dahulu, lalu tekan <strong>Jawab</strong>. Soal tidak akan berpindah hanya karena pilihan diklik.</div><div class="actions"><button class="btn primary" id="startQ">Mulai Latihan</button></div></div></div>`;
+   document.getElementById('startQ').onclick=()=>{
+     state.chapter=Number(document.getElementById('qchap').value)||null;
+     const pool=(state.chapter?itemsFor(state.chapter):vocab).slice().sort(()=>Math.random()-.5);
+     const selected=document.getElementById('qcount').value;
+     const requested=selected==='Semua'?pool.length:Number(selected);
+     const n=Math.min(requested,pool.length);
+     state.quiz=makeQuizState(pool,n);
+     render();
+   };
+   return;
+ }
  const q=state.quiz;
  if(q.i>=q.pool.length)return quizResult();
  const v=q.pool[q.i];
  if(!q.choices) q.choices=makeChoices(v,q.pool);
  const choices=q.choices;
  const attempts=q.attempts||0;
- app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card"><div class="quiz-meta"><span>Soal ${q.i+1}/${q.pool.length}</span><span>Benar: ${q.score}</span></div><div class="notice" style="margin-top:14px;text-align:center">Kesempatan: <strong>${2-attempts}</strong> dari 2</div><div class="quiz-question">${esc(v.korea)}</div><div class="choices">${choices.map(c=>{const tried=q.tried?.includes(c.arti);return `<button class="choice ${tried?'tried':''}" data-answer="${encodeURIComponent(c.arti)}" ${tried?'disabled':''}>${esc(c.arti)}</button>`}).join('')}</div><div class="actions"><button class="btn" id="quitQ">Keluar</button></div></div></div>`;
+ const selected=q.selected||null;
+ const feedback=q.feedback;
+ const canAnswer=!!selected && !q.pendingNext && !q.locked;
+ const actionLabel=q.pendingNext?'Soal Berikutnya':'Jawab';
+ const feedbackHtml=feedback?`<div class="quiz-feedback ${feedback.type==='correct'?'good':'bad'}" role="status"><strong>${esc(feedback.title)}</strong><span>${esc(feedback.message)}</span>${feedback.answer?`<small>Jawaban yang benar: <strong>${esc(feedback.answer)}</strong></small>`:''}</div>`:'';
+ app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card">
+   <div class="quiz-meta"><span>Soal ${q.i+1}/${q.pool.length}</span><span>Benar: ${q.score}</span></div>
+   <div class="notice" style="margin-top:14px;text-align:center">Kesempatan: <strong>${Math.max(0,2-attempts)}</strong> dari 2</div>
+   <div class="quiz-question">${esc(v.korea)}</div>
+   <div class="choices">${choices.map(c=>{
+      const isSelected=selected===c.arti;
+      const tried=q.tried?.includes(c.arti);
+      const cls=`choice ${isSelected?'selected':''} ${tried?'tried':''}`;
+      return `<button class="${cls}" data-answer="${encodeURIComponent(c.arti)}" ${tried||q.pendingNext?'disabled':''} aria-pressed="${isSelected?'true':'false'}">${esc(c.arti)}</button>`;
+   }).join('')}</div>
+   ${feedbackHtml}
+   <div class="actions quiz-actions"><button class="btn" id="quitQ">Keluar</button><button class="btn primary" id="answerQ" ${canAnswer||q.pendingNext?'':'disabled'}>${actionLabel}</button></div>
+ </div></div>`;
+
  document.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{
-   if(q.locked)return;
+   if(q.locked||q.pendingNext)return;
+   q.selected=decodeURIComponent(btn.dataset.answer);
+   q.feedback=null;
+   render();
+ });
+ document.getElementById('answerQ').onclick=()=>{
+   if(q.pendingNext){
+     q.i++;
+     q.attempts=0;
+     q.tried=[];
+     q.choices=null;
+     q.selected=null;
+     q.pendingNext=false;
+     q.feedback=null;
+     q.locked=false;
+     render();
+     return;
+   }
+   if(!q.selected||q.locked)return;
    q.locked=true;
-   const answer=decodeURIComponent(btn.dataset.answer);
+   const answer=q.selected;
    const correct=answer===v.arti;
    if(correct){
      q.score++;
@@ -135,9 +226,11 @@ function quizView(){
      progress.answered=(progress.answered||0)+1;
      progress.seen[v.id||`${v.bab}-${v.korea}`]=true;
      save();
-     btn.classList.add('correct');
+     q.pendingNext=true;
+     q.locked=false;
+     q.feedback={type:'correct',title:'Jawaban Benar!',message:'+10 XP. Tekan “Soal Berikutnya” untuk melanjutkan.'};
+     render();
      toastMsg('Benar! +10 XP');
-     setTimeout(()=>{q.i++;q.attempts=0;q.tried=[];q.choices=null;q.locked=false;render()},650);
      return;
    }
 
@@ -146,25 +239,37 @@ function quizView(){
    progress.wrong=(progress.wrong||0)+1;
    q.tried=q.tried||[];
    if(!q.tried.includes(answer))q.tried.push(answer);
+   q.selected=null;
    save();
 
    if(q.attempts<2){
-     showWrongModal(`Jawaban “${answer}” belum tepat. Jangan khawatir, kamu masih memiliki 1 kesempatan lagi.`);
      q.locked=false;
+     q.feedback={type:'wrong',title:'Jawaban Salah',message:'Jawabanmu belum tepat. Kamu masih memiliki 1 kesempatan lagi.'};
+     render();
+     toastMsg('Salah. Coba lagi!');
    }else{
      progress.answered=(progress.answered||0)+1;
+     q.pendingNext=true;
+     q.locked=false;
+     q.feedback={type:'wrong',title:'Jawaban Salah 2×',message:'Kedua kesempatan sudah digunakan.',answer:v.arti};
      save();
-     showWrongModal(`Kedua kesempatan sudah digunakan. Soal akan dilanjutkan setelah kamu menekan tombol berikutnya.`,true);
+     render();
+     toastMsg('Kesempatan habis. Lihat jawaban yang benar.');
    }
- });
+ };
  document.getElementById('quitQ').onclick=()=>{state.quiz=null;show('home')};
 }
-function quizResult(){const q=state.quiz;const total=q.pool.length;const pct=total?Math.round(q.score/total*100):0;app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card" style="text-align:center"><div class="cat">HASIL LATIHAN</div><h1>${pct}%</h1><p class="muted">${q.score} benar dari ${total} soal.</p><p class="muted">Kesalahan: ${q.wrong||0} kali.</p><div class="progress"><span style="width:${pct}%"></span></div><div class="actions" style="justify-content:center"><button class="btn primary" id="again">Coba Lagi</button><button class="btn" id="homeAfter">Ke Beranda</button></div></div></div>`;document.getElementById('again').onclick=()=>{state.quiz=null;startQuiz()};document.getElementById('homeAfter').onclick=()=>{state.quiz=null;show('home')}}
+function quizResult(){const q=state.quiz;const total=q.pool.length;const pct=total?Math.round(q.score/total*100):0;app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card" style="text-align:center"><div class="cat">HASIL LATIHAN</div><h1>${pct}%</h1><p class="muted">${q.score} benar dari ${total} soal.</p><p class="muted">Kesalahan: ${q.wrong||0} kali.</p><div class="progress"><span style="width:${pct}%"></span></div><div class="actions" style="justify-content:center"><button class="btn primary" id="again">Coba Lagi</button><button class="btn" id="homeAfter">Ke Beranda</button></div></div></div>`;document.getElementById('again').onclick=()=>{
+  const count=q.questionCount||q.pool.length;
+  const ch=state.chapter||null;
+  const pool=(ch?itemsFor(ch):vocab).slice().sort(()=>Math.random()-.5);
+  state.quiz=makeQuizState(pool,Math.min(count,pool.length));
+  render();
+};document.getElementById('homeAfter').onclick=()=>{state.quiz=null;show('home')}}
 function statsView(){const total=vocab.length;const pct=total?Math.min(100,Math.round(Object.keys(progress.seen||{}).length/total*100)):0;app.innerHTML=`<div class="section-head"><div><h1>Statistik</h1><p class="muted">Ringkasan aktivitas belajar di perangkat ini.</p></div></div><div class="stats-grid"><div class="card stat"><span class="muted">Soal dijawab</span><strong>${progress.answered||0}</strong></div><div class="card stat"><span class="muted">Jawaban benar</span><strong>${progress.correct||0}</strong></div><div class="card stat"><span class="muted">XP</span><strong>${progress.xp||0}</strong></div></div><div class="card" style="margin-top:14px"><h3>Kemajuan kosakata</h3><p class="muted">${Object.keys(progress.seen||{}).length} dari ${total} kosakata ditandai pernah dipelajari.</p><div class="progress"><span style="width:${pct}%"></span></div></div><div class="actions"><button class="btn" id="resetStats">Reset statistik</button></div>`;document.getElementById('resetStats').onclick=()=>{if(confirm('Reset statistik di perangkat ini?')){progress={correct:0,wrong:0,answered:0,xp:0,streak:0,lastDate:'',seen:{}};save();render();toastMsg('Statistik direset')}}}
 function bindActions(){document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>show('vocab',{chapter:b.dataset.open}));document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>show(b.dataset.action));document.querySelectorAll('[data-flash]').forEach(b=>b.onclick=()=>{state.chapter=Number(b.dataset.flash);state.flashIndex=0;state.flashShow=false;show('flashcards')});}
 document.getElementById('closeInfo').onclick=closeInfoModal;
 document.getElementById('closeInfoBottom').onclick=closeInfoModal;
 infoModal.addEventListener('click',e=>{if(e.target===infoModal)closeInfoModal()});
-wrongModal.addEventListener('click',e=>{if(e.target===wrongModal)e.stopPropagation()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!infoModal.classList.contains('hidden'))closeInfoModal()});
 init();

@@ -36,3 +36,24 @@ Dataset mencakup:
 
 ## Audit
 Laporan audit memeriksa 30/30 halaman `문화와 정보`, keberadaan Bab 1–30, field data wajib, dan duplikasi Korea dalam bab yang sama. Jumlah pada card bab dihitung otomatis dari dataset, bukan hard-code.
+
+## Perbaikan Quiz — 28 September 2026
+
+- Memilih opsi jawaban **tidak langsung berpindah soal**.
+- Setelah memilih opsi, tombol **Jawab** harus ditekan.
+- Jawaban benar menampilkan konfirmasi dan tombol **Soal Berikutnya**.
+- Jawaban salah pertama menampilkan notifikasi dan memberi kesempatan kedua.
+- Jawaban salah kedua menampilkan jawaban yang benar dan tombol **Soal Berikutnya**.
+- Opsi yang sudah salah tidak dapat dipilih lagi pada soal yang sama.
+- Jumlah kosakata pada kartu Bab dihitung langsung dari `vocabulary.json`, sehingga Bab 1–30 menampilkan jumlah dataset aktual.
+- `chapters.json` dan `vocabulary.json` dimuat dengan cache-busting version agar deployment baru tidak terus mengambil JSON lama dari cache browser/CDN.
+
+
+## Perbaikan versi 20260928-quizfix-02
+- Field `sumber` pada seluruh 2.355 entri disinkronkan dengan jumlah utama/informasi per bab.
+- Jumlah pada kartu Bab dihitung langsung dari `vocabulary.json`.
+- Pilihan jawaban kuis tidak boleh memiliki arti Indonesia yang sama.
+- Kategori di-reset otomatis saat berpindah bab agar tidak menghasilkan daftar kosong palsu.
+- Popup pembuat hanya muncul pada kunjungan pertama di perangkat/browser.
+- Modal jawaban lama yang tidak digunakan dihapus; feedback kuis tetap inline.
+- Cache-busting dataset dinaikkan ke `20260928-quizfix-02`.
