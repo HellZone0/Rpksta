@@ -1,0 +1,242 @@
+[
+  {
+    "bab": 1,
+    "halamanInfoPDF": 51,
+    "jumlahUtama": 43,
+    "jumlahBudayaInformasi": 30,
+    "jumlahTotal": 73,
+    "istilahInfoBaru": 22
+  },
+  {
+    "bab": 2,
+    "halamanInfoPDF": 61,
+    "jumlahUtama": 27,
+    "jumlahBudayaInformasi": 31,
+    "jumlahTotal": 58,
+    "istilahInfoBaru": 22
+  },
+  {
+    "bab": 3,
+    "halamanInfoPDF": 71,
+    "jumlahUtama": 33,
+    "jumlahBudayaInformasi": 45,
+    "jumlahTotal": 78,
+    "istilahInfoBaru": 36
+  },
+  {
+    "bab": 4,
+    "halamanInfoPDF": 81,
+    "jumlahUtama": 29,
+    "jumlahBudayaInformasi": 34,
+    "jumlahTotal": 63,
+    "istilahInfoBaru": 25
+  },
+  {
+    "bab": 5,
+    "halamanInfoPDF": 91,
+    "jumlahUtama": 50,
+    "jumlahBudayaInformasi": 37,
+    "jumlahTotal": 87,
+    "istilahInfoBaru": 28
+  },
+  {
+    "bab": 6,
+    "halamanInfoPDF": 101,
+    "jumlahUtama": 52,
+    "jumlahBudayaInformasi": 36,
+    "jumlahTotal": 88,
+    "istilahInfoBaru": 29
+  },
+  {
+    "bab": 7,
+    "halamanInfoPDF": 111,
+    "jumlahUtama": 31,
+    "jumlahBudayaInformasi": 33,
+    "jumlahTotal": 64,
+    "istilahInfoBaru": 28
+  },
+  {
+    "bab": 8,
+    "halamanInfoPDF": 121,
+    "jumlahUtama": 50,
+    "jumlahBudayaInformasi": 32,
+    "jumlahTotal": 82,
+    "istilahInfoBaru": 24
+  },
+  {
+    "bab": 9,
+    "halamanInfoPDF": 131,
+    "jumlahUtama": 37,
+    "jumlahBudayaInformasi": 37,
+    "jumlahTotal": 74,
+    "istilahInfoBaru": 28
+  },
+  {
+    "bab": 10,
+    "halamanInfoPDF": 141,
+    "jumlahUtama": 42,
+    "jumlahBudayaInformasi": 42,
+    "jumlahTotal": 84,
+    "istilahInfoBaru": 34
+  },
+  {
+    "bab": 11,
+    "halamanInfoPDF": 151,
+    "jumlahUtama": 50,
+    "jumlahBudayaInformasi": 30,
+    "jumlahTotal": 80,
+    "istilahInfoBaru": 24
+  },
+  {
+    "bab": 12,
+    "halamanInfoPDF": 161,
+    "jumlahUtama": 39,
+    "jumlahBudayaInformasi": 40,
+    "jumlahTotal": 79,
+    "istilahInfoBaru": 31
+  },
+  {
+    "bab": 13,
+    "halamanInfoPDF": 171,
+    "jumlahUtama": 36,
+    "jumlahBudayaInformasi": 42,
+    "jumlahTotal": 78,
+    "istilahInfoBaru": 33
+  },
+  {
+    "bab": 14,
+    "halamanInfoPDF": 181,
+    "jumlahUtama": 32,
+    "jumlahBudayaInformasi": 34,
+    "jumlahTotal": 66,
+    "istilahInfoBaru": 25
+  },
+  {
+    "bab": 15,
+    "halamanInfoPDF": 191,
+    "jumlahUtama": 33,
+    "jumlahBudayaInformasi": 42,
+    "jumlahTotal": 75,
+    "istilahInfoBaru": 34
+  },
+  {
+    "bab": 16,
+    "halamanInfoPDF": 201,
+    "jumlahUtama": 37,
+    "jumlahBudayaInformasi": 34,
+    "jumlahTotal": 71,
+    "istilahInfoBaru": 31
+  },
+  {
+    "bab": 17,
+    "halamanInfoPDF": 211,
+    "jumlahUtama": 36,
+    "jumlahBudayaInformasi": 47,
+    "jumlahTotal": 83,
+    "istilahInfoBaru": 38
+  },
+  {
+    "bab": 18,
+    "halamanInfoPDF": 221,
+    "jumlahUtama": 38,
+    "jumlahBudayaInformasi": 51,
+    "jumlahTotal": 89,
+    "istilahInfoBaru": 43
+  },
+  {
+    "bab": 19,
+    "halamanInfoPDF": 231,
+    "jumlahUtama": 38,
+    "jumlahBudayaInformasi": 41,
+    "jumlahTotal": 79,
+    "istilahInfoBaru": 32
+  },
+  {
+    "bab": 20,
+    "halamanInfoPDF": 241,
+    "jumlahUtama": 31,
+    "jumlahBudayaInformasi": 43,
+    "jumlahTotal": 74,
+    "istilahInfoBaru": 34
+  },
+  {
+    "bab": 21,
+    "halamanInfoPDF": 251,
+    "jumlahUtama": 46,
+    "jumlahBudayaInformasi": 48,
+    "jumlahTotal": 94,
+    "istilahInfoBaru": 40
+  },
+  {
+    "bab": 22,
+    "halamanInfoPDF": 261,
+    "jumlahUtama": 32,
+    "jumlahBudayaInformasi": 35,
+    "jumlahTotal": 67,
+    "istilahInfoBaru": 26
+  },
+  {
+    "bab": 23,
+    "halamanInfoPDF": 271,
+    "jumlahUtama": 33,
+    "jumlahBudayaInformasi": 34,
+    "jumlahTotal": 67,
+    "istilahInfoBaru": 27
+  },
+  {
+    "bab": 24,
+    "halamanInfoPDF": 281,
+    "jumlahUtama": 40,
+    "jumlahBudayaInformasi": 32,
+    "jumlahTotal": 72,
+    "istilahInfoBaru": 25
+  },
+  {
+    "bab": 25,
+    "halamanInfoPDF": 291,
+    "jumlahUtama": 42,
+    "jumlahBudayaInformasi": 57,
+    "jumlahTotal": 99,
+    "istilahInfoBaru": 48
+  },
+  {
+    "bab": 26,
+    "halamanInfoPDF": 301,
+    "jumlahUtama": 42,
+    "jumlahBudayaInformasi": 39,
+    "jumlahTotal": 81,
+    "istilahInfoBaru": 32
+  },
+  {
+    "bab": 27,
+    "halamanInfoPDF": 311,
+    "jumlahUtama": 41,
+    "jumlahBudayaInformasi": 40,
+    "jumlahTotal": 81,
+    "istilahInfoBaru": 39
+  },
+  {
+    "bab": 28,
+    "halamanInfoPDF": 321,
+    "jumlahUtama": 32,
+    "jumlahBudayaInformasi": 34,
+    "jumlahTotal": 66,
+    "istilahInfoBaru": 25
+  },
+  {
+    "bab": 29,
+    "halamanInfoPDF": 331,
+    "jumlahUtama": 32,
+    "jumlahBudayaInformasi": 35,
+    "jumlahTotal": 67,
+    "istilahInfoBaru": 26
+  },
+  {
+    "bab": 30,
+    "halamanInfoPDF": 341,
+    "jumlahUtama": 29,
+    "jumlahBudayaInformasi": 38,
+    "jumlahTotal": 67,
+    "istilahInfoBaru": 30
+  }
+]

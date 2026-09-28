@@ -1,0 +1,272 @@
+[
+  {
+    "bab": 1,
+    "korea": "자기소개",
+    "indonesia": "Perkenalan Diri",
+    "jumlahKosakata": 75,
+    "jumlahUtama": 43,
+    "jumlahInformasi": 32,
+    "halamanInfoPDF": 51
+  },
+  {
+    "bab": 2,
+    "korea": "생활용품",
+    "indonesia": "Kebutuhan Sehari-hari",
+    "jumlahKosakata": 64,
+    "jumlahUtama": 27,
+    "jumlahInformasi": 37,
+    "halamanInfoPDF": 61
+  },
+  {
+    "bab": 3,
+    "korea": "위치와 장소",
+    "indonesia": "Lokasi dan Tempat",
+    "jumlahKosakata": 84,
+    "jumlahUtama": 33,
+    "jumlahInformasi": 51,
+    "halamanInfoPDF": 71
+  },
+  {
+    "bab": 4,
+    "korea": "동작과 사물",
+    "indonesia": "Aksi dan Benda",
+    "jumlahKosakata": 66,
+    "jumlahUtama": 29,
+    "jumlahInformasi": 37,
+    "halamanInfoPDF": 81
+  },
+  {
+    "bab": 5,
+    "korea": "날짜와 요일",
+    "indonesia": "Tanggal dan Hari",
+    "jumlahKosakata": 90,
+    "jumlahUtama": 50,
+    "jumlahInformasi": 40,
+    "halamanInfoPDF": 91
+  },
+  {
+    "bab": 6,
+    "korea": "하루 일과",
+    "indonesia": "Rutinitas Sehari-hari",
+    "jumlahKosakata": 90,
+    "jumlahUtama": 52,
+    "jumlahInformasi": 38,
+    "halamanInfoPDF": 101
+  },
+  {
+    "bab": 7,
+    "korea": "계절과 날씨",
+    "indonesia": "Musim dan Cuaca",
+    "jumlahKosakata": 64,
+    "jumlahUtama": 31,
+    "jumlahInformasi": 33,
+    "halamanInfoPDF": 111
+  },
+  {
+    "bab": 8,
+    "korea": "가족과 친구",
+    "indonesia": "Keluarga dan Teman",
+    "jumlahKosakata": 82,
+    "jumlahUtama": 50,
+    "jumlahInformasi": 32,
+    "halamanInfoPDF": 121
+  },
+  {
+    "bab": 9,
+    "korea": "음식 주문",
+    "indonesia": "Memesan Makanan",
+    "jumlahKosakata": 74,
+    "jumlahUtama": 37,
+    "jumlahInformasi": 37,
+    "halamanInfoPDF": 131
+  },
+  {
+    "bab": 10,
+    "korea": "물건 구입",
+    "indonesia": "Membeli Barang",
+    "jumlahKosakata": 93,
+    "jumlahUtama": 42,
+    "jumlahInformasi": 51,
+    "halamanInfoPDF": 141
+  },
+  {
+    "bab": 11,
+    "korea": "집안일",
+    "indonesia": "Pekerjaan Rumah",
+    "jumlahKosakata": 80,
+    "jumlahUtama": 50,
+    "jumlahInformasi": 30,
+    "halamanInfoPDF": 151
+  },
+  {
+    "bab": 12,
+    "korea": "대중교통",
+    "indonesia": "Transportasi Umum",
+    "jumlahKosakata": 81,
+    "jumlahUtama": 39,
+    "jumlahInformasi": 42,
+    "halamanInfoPDF": 161
+  },
+  {
+    "bab": 13,
+    "korea": "주말 활동",
+    "indonesia": "Aktivitas Akhir Pekan",
+    "jumlahKosakata": 78,
+    "jumlahUtama": 36,
+    "jumlahInformasi": 42,
+    "halamanInfoPDF": 171
+  },
+  {
+    "bab": 14,
+    "korea": "길 찾기",
+    "indonesia": "Mencari Jalan",
+    "jumlahKosakata": 72,
+    "jumlahUtama": 32,
+    "jumlahInformasi": 40,
+    "halamanInfoPDF": 181
+  },
+  {
+    "bab": 15,
+    "korea": "옷차림",
+    "indonesia": "Pakaian",
+    "jumlahKosakata": 77,
+    "jumlahUtama": 33,
+    "jumlahInformasi": 44,
+    "halamanInfoPDF": 191
+  },
+  {
+    "bab": 16,
+    "korea": "집 구하기",
+    "indonesia": "Mencari Rumah",
+    "jumlahKosakata": 71,
+    "jumlahUtama": 37,
+    "jumlahInformasi": 34,
+    "halamanInfoPDF": 201
+  },
+  {
+    "bab": 17,
+    "korea": "휴가",
+    "indonesia": "Cuti",
+    "jumlahKosakata": 84,
+    "jumlahUtama": 36,
+    "jumlahInformasi": 48,
+    "halamanInfoPDF": 211
+  },
+  {
+    "bab": 18,
+    "korea": "취미",
+    "indonesia": "Hobi",
+    "jumlahKosakata": 95,
+    "jumlahUtama": 38,
+    "jumlahInformasi": 57,
+    "halamanInfoPDF": 221
+  },
+  {
+    "bab": 19,
+    "korea": "요리",
+    "indonesia": "Memasak",
+    "jumlahKosakata": 82,
+    "jumlahUtama": 38,
+    "jumlahInformasi": 44,
+    "halamanInfoPDF": 231
+  },
+  {
+    "bab": 20,
+    "korea": "인터넷과 스마트폰",
+    "indonesia": "Internet dan Smartphone",
+    "jumlahKosakata": 74,
+    "jumlahUtama": 31,
+    "jumlahInformasi": 43,
+    "halamanInfoPDF": 241
+  },
+  {
+    "bab": 21,
+    "korea": "병원",
+    "indonesia": "Rumah Sakit",
+    "jumlahKosakata": 95,
+    "jumlahUtama": 46,
+    "jumlahInformasi": 49,
+    "halamanInfoPDF": 251
+  },
+  {
+    "bab": 22,
+    "korea": "약국",
+    "indonesia": "Apotek",
+    "jumlahKosakata": 69,
+    "jumlahUtama": 32,
+    "jumlahInformasi": 37,
+    "halamanInfoPDF": 261
+  },
+  {
+    "bab": 23,
+    "korea": "우체국",
+    "indonesia": "Kantor Pos",
+    "jumlahKosakata": 67,
+    "jumlahUtama": 33,
+    "jumlahInformasi": 34,
+    "halamanInfoPDF": 271
+  },
+  {
+    "bab": 24,
+    "korea": "은행",
+    "indonesia": "Bank",
+    "jumlahKosakata": 75,
+    "jumlahUtama": 40,
+    "jumlahInformasi": 35,
+    "halamanInfoPDF": 281
+  },
+  {
+    "bab": 25,
+    "korea": "외국인 근로자 지원 기관",
+    "indonesia": "Lembaga Dukungan Pekerja Asing",
+    "jumlahKosakata": 102,
+    "jumlahUtama": 42,
+    "jumlahInformasi": 60,
+    "halamanInfoPDF": 291
+  },
+  {
+    "bab": 26,
+    "korea": "한국의 주거 문화와 음식 문화",
+    "indonesia": "Budaya Tempat Tinggal dan Makanan Korea",
+    "jumlahKosakata": 81,
+    "jumlahUtama": 42,
+    "jumlahInformasi": 39,
+    "halamanInfoPDF": 301
+  },
+  {
+    "bab": 27,
+    "korea": "한국의 기념일",
+    "indonesia": "Hari Peringatan Korea",
+    "jumlahKosakata": 81,
+    "jumlahUtama": 41,
+    "jumlahInformasi": 40,
+    "halamanInfoPDF": 311
+  },
+  {
+    "bab": 28,
+    "korea": "한국의 명절",
+    "indonesia": "Hari Raya Korea",
+    "jumlahKosakata": 67,
+    "jumlahUtama": 32,
+    "jumlahInformasi": 35,
+    "halamanInfoPDF": 321
+  },
+  {
+    "bab": 29,
+    "korea": "한국의 예절",
+    "indonesia": "Etika Korea",
+    "jumlahKosakata": 69,
+    "jumlahUtama": 32,
+    "jumlahInformasi": 37,
+    "halamanInfoPDF": 331
+  },
+  {
+    "bab": 30,
+    "korea": "한국의 대중문화",
+    "indonesia": "Budaya Populer Korea",
+    "jumlahKosakata": 73,
+    "jumlahUtama": 29,
+    "jumlahInformasi": 44,
+    "halamanInfoPDF": 341
+  }
+]
