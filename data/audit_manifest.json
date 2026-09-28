@@ -1,0 +1,25 @@
+{
+  "judul": "EPS-TOPIK 한국어 어휘 퀴즈 — Kosakata Bab 1–30",
+  "sumber": "EPS TOPIK TB I TRANS INDO 2024(1).pdf",
+  "cakupan": "Bab 1–30",
+  "aturan_extraction": [
+    "Semua entri dari bagian 어휘/KOSAKATA dipertahankan.",
+    "Bagian 문화와 정보/Budaya & Informasi Bab 1–30 juga diekstrak sebagai glosarium pembelajaran.",
+    "Istilah info menggunakan bentuk leksikal/dasar agar mudah dipelajari; partikel gramatikal bukan kosakata.",
+    "Istilah yang sama di bab berbeda tetap disimpan sesuai bab sumber.",
+    "Bab 27 dan halaman info lain diaudit secara khusus karena sebelumnya ditemukan kekurangan."
+  ],
+  "jumlahTotal": 2355,
+  "jumlahUtama": 1133,
+  "jumlahInfo": 1222,
+  "jumlahTambahanInfo": 0,
+  "duplikatIdentikDalamBab": [],
+  "status": "audit selesai; dataset diperluas dan jumlah per bab dihitung ulang",
+  "audit_halaman_info": "30/30 halaman diperiksa langsung dari PDF",
+  "verifikasi_dataset": {
+    "semua_bab_1_30": true,
+    "field_wajib_lengkap": true,
+    "duplikat_dalam_bab": false,
+    "semua_halaman_info_terdeteksi": true
+  }
+}
