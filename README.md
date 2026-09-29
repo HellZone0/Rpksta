@@ -75,3 +75,10 @@ Pembaruan UI/fitur yang ditambahkan:
 - Tinjau Jawaban setelah quiz untuk soal yang pernah salah, dengan shortcut kembali ke Kartu Belajar.
 
 Data tetap menggunakan `data/vocabulary.json` (2.355 entri) dan `data/chapters.json` (30 Bab).
+
+
+## Feature Pack 03
+- Jawaban benar otomatis berpindah ke soal berikutnya setelah feedback singkat.
+- Search kosakata dapat digunakan untuk seluruh Bab 1–30 dan mencari nomor/judul Bab.
+- Setiap kartu kosakata menampilkan nomor + nama Bab.
+- UI diringankan: tanpa radial background besar, blur berat, dan shadow berlebihan.

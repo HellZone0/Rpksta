@@ -74,3 +74,57 @@
 @media(max-width:650px){.quiz-feedback-card{padding:27px 18px 20px;border-radius:22px}.quiz-feedback-icon{width:62px;height:62px}.quiz-feedback-card h2{font-size:1.45rem}.feedback-action{margin-top:16px}}
 @keyframes correctGlow{0%{box-shadow:var(--shadow)}45%{box-shadow:0 0 0 3px rgba(32,212,122,.16),0 22px 65px rgba(32,212,122,.14)}100%{box-shadow:var(--shadow)}}
 .quiz-correct{animation:quizCardIn .4s cubic-bezier(.2,.75,.2,1) both,correctGlow .8s .1s ease both}
+
+
+/* Feature Pack 03 — lighter mobile-first UI */
+:root{
+  --shadow:0 6px 18px rgba(0,0,0,.16);
+  --radius:16px;
+}
+html{scroll-behavior:auto}
+body{
+  background:var(--bg);
+}
+body:before,.hero:before{display:none!important}
+.topbar{
+  background:var(--surface)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:0 1px 0 var(--line);
+}
+.card,.mini-stat,.hero-card,.level-card,.feature-card,.quiz-card{
+  box-shadow:0 4px 14px rgba(0,0,0,.10)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.card,.mini-stat{
+  background:var(--surface)!important;
+}
+.hero-card{
+  background:var(--primary)!important;
+  box-shadow:0 8px 20px rgba(22,119,237,.18)!important;
+}
+.chapter-card:after{display:none!important}
+.btn.primary{
+  box-shadow:0 5px 14px rgba(15,116,255,.18)!important;
+}
+.modal-backdrop,.modal-overlay,.feedback-modal{
+  backdrop-filter:blur(3px)!important;
+  -webkit-backdrop-filter:blur(3px)!important;
+}
+.vocab-chapter{
+  margin-top:6px;
+  font-size:.78rem;
+  color:var(--muted);
+  font-weight:650;
+}
+@media (max-width:700px){
+  .container{padding:20px 14px 82px}
+  .hero{padding:28px 0 22px;gap:18px}
+  .hero h1{font-size:clamp(2.2rem,12vw,3.5rem)}
+  .grid{grid-template-columns:1fr}
+  .dashboard-stats{gap:8px;margin-bottom:22px}
+  .mini-stat{padding:14px}
+  .card{border-radius:14px;padding:15px}
+  .btn{box-shadow:none!important}
+}

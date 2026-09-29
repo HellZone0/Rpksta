@@ -1,3 +1,4 @@
+// Feature Pack 03 — auto-next, global search, chapter labels, lightweight UI
 let chapters = [];
 let vocab = [];
 const app = document.getElementById('app');
@@ -236,21 +237,31 @@ function vocabView() {
   const base = ch ? itemsFor(ch) : vocab;
   const cats = [...new Set(base.map(v => v.kategori))];
   if (state.cat !== 'Semua' && !cats.includes(state.cat)) state.cat = 'Semua';
-  const list = base.filter(v => (state.cat === 'Semua' || v.kategori === state.cat) && (state.status === 'Semua' || mastery(v) === state.status) && ((v.korea + ' ' + v.arti).toLowerCase().includes(state.search.toLowerCase())));
+  const qSearch = state.search.trim().toLowerCase();
+  const list = base.filter(v => {
+    const chInfo = chapters[v.bab-1] || {};
+    const hay = [v.korea, v.arti, v.kategori, chInfo.korea, chInfo.indonesia, `bab ${v.bab}`].join(' ').toLowerCase();
+    return (state.cat === 'Semua' || v.kategori === state.cat)
+      && (state.status === 'Semua' || mastery(v) === state.status)
+      && (!qSearch || hay.includes(qSearch));
+  });
   const statusCounts = { semua:base.length, belum:base.filter(v=>mastery(v)==='belum').length, perlu:base.filter(v=>mastery(v)==='perlu').length, salah:base.filter(v=>mastery(v)==='salah').length, dikuasai:base.filter(v=>mastery(v)==='dikuasai').length };
   app.innerHTML = `<div class="section-head"><div><div class="eyebrow">KOSAKATA</div><h1>${ch ? `Bab ${ch} — ${esc(chapters[ch-1].korea)}` : 'Semua Kosakata'}</h1><p class="muted">${ch ? esc(chapters[ch-1].indonesia) : 'Kosakata EPS-TOPIK Bab 1–30'}</p></div><button class="btn" data-action="chapters">Daftar Bab</button></div>
-  <div class="toolbar"><input id="vsearch" class="search" placeholder="Cari kosakata Korea atau arti Indonesia..." value="${esc(state.search)}"><select id="vcat" class="select"><option>Semua</option>${cats.map(x=>`<option ${x===state.cat?'selected':''}>${esc(x)}</option>`).join('')}</select>${ch ? `<button class="btn primary" data-flash="${ch}">Kartu Bab Ini</button>` : ''}</div>
+  <div class="toolbar"><input id="vsearch" class="search" placeholder="Cari Korea, Indonesia, kategori, atau Bab..." value="${esc(state.search)}"><select id="vchapter" class="select"><option value="">Semua Bab</option>${chapters.map(c=>`<option value="${c.bab}" ${ch===c.bab?'selected':''}>Bab ${c.bab} — ${esc(c.korea)}</option>`).join('')}</select><select id="vcat" class="select"><option>Semua</option>${cats.map(x=>`<option ${x===state.cat?'selected':''}>${esc(x)}</option>`).join('')}</select>${ch ? `<button class="btn primary" data-flash="${ch}">Kartu Bab Ini</button>` : ''}</div>
   <div class="mastery-pills"><button class="pill ${state.status==='Semua'?'active':''}" data-status="Semua">Semua <b>${statusCounts.semua}</b></button><button class="pill ${state.status==='belum'?'active':''}" data-status="belum">⚪ Belum <b>${statusCounts.belum}</b></button><button class="pill ${state.status==='perlu'?'active':''}" data-status="perlu">🟡 Perlu latihan <b>${statusCounts.perlu}</b></button><button class="pill ${state.status==='salah'?'active':''}" data-status="salah">🔴 Sering salah <b>${statusCounts.salah}</b></button><button class="pill ${state.status==='dikuasai'?'active':''}" data-status="dikuasai">🟢 Dikuasai <b>${statusCounts.dikuasai}</b></button></div>
   <div class="notice">Menampilkan <strong>${list.length}</strong> kosakata${ch ? ` dari Bab ${ch}` : ''}. Status setiap kata tersimpan otomatis di perangkat.</div>
   <div class="vocab-list">${list.length ? list.map(v => vocabItem(v)).join('') : `<div class="card empty">Kosakata dengan filter ini belum tersedia.</div>`}</div><p class="source-note">Data disusun dari entri 어휘/KOSAKATA Bab 1–30 serta istilah leksikal dari bagian 문화와 정보/Budaya & Informasi pada PDF EPS-TOPIK yang diberikan.</p>`;
   document.getElementById('vsearch').addEventListener('input', e => { state.search = e.target.value; render(); const el=document.getElementById('vsearch'); if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);} });
+  document.getElementById('vchapter').addEventListener('change', e => { state.chapter = Number(e.target.value) || null; state.cat='Semua'; state.status='Semua'; render(); });
   document.getElementById('vcat').addEventListener('change', e => { state.cat=e.target.value; render(); });
   document.querySelectorAll('[data-status]').forEach(b => b.onclick = () => { state.status=b.dataset.status; render(); });
   bindActions(); updateActiveNav();
 }
 function vocabItem(v) {
   const s = wordStats(v);
-  return `<div class="vocab-item ${masteryClass(v)}"><div class="word-main"><div class="ko">${esc(v.korea)}</div><div class="meaning">${esc(v.arti)}</div><div class="word-meta"><span class="status-chip">${masteryLabel(v)}</span>${s.wrong?`<span class="mistake-chip">${s.wrong}× salah</span>`:''}${s.favorite?'<span class="favorite-chip">★ Disimpan</span>':''}</div></div><span class="cat">${esc(v.kategori)}</span><div class="word-actions"><button class="round-btn favorite-btn ${s.favorite?'is-favorite':''}" data-favorite="${encodeURIComponent(wordKey(v))}" title="Simpan kata" aria-label="Simpan kata">${s.favorite?'★':'☆'}</button><button class="round-btn" data-oneflash="${encodeURIComponent(wordKey(v))}" title="Buka kartu" aria-label="Buka kartu">🃏</button></div></div>`;
+  const chInfo = chapters[v.bab-1] || {};
+  const chapterLabel = `Bab ${v.bab} · ${chInfo.korea || ''}`;
+  return `<div class="vocab-item ${masteryClass(v)}"><div class="word-main"><div class="ko">${esc(v.korea)}</div><div class="meaning">${esc(v.arti)}</div><div class="vocab-chapter">${esc(chapterLabel)}${chInfo.indonesia ? ` — ${esc(chInfo.indonesia)}` : ''}</div><div class="word-meta"><span class="status-chip">${masteryLabel(v)}</span>${s.wrong?`<span class="mistake-chip">${s.wrong}× salah</span>`:''}${s.favorite?'<span class="favorite-chip">★ Disimpan</span>':''}</div></div><span class="cat">${esc(v.kategori)}</span><div class="word-actions"><button class="round-btn favorite-btn ${s.favorite?'is-favorite':''}" data-favorite="${encodeURIComponent(wordKey(v))}" title="Simpan kata" aria-label="Simpan kata">${s.favorite?'★':'☆'}</button><button class="round-btn" data-oneflash="${encodeURIComponent(wordKey(v))}" title="Buka kartu" aria-label="Buka kartu">🃏</button></div></div>`;
 }
 
 function flashcards() {
@@ -286,7 +297,7 @@ function makeQuizState(pool,n) { return {pool:pool.slice(0,n),questionCount:n,i:
 
 function quizView() {
   if (!state.quiz) {
-    app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card"><div class="eyebrow">LATIHAN SOAL</div><h1>Uji kosakata.</h1><p class="muted">Pilih jawaban, tekan <strong>Jawab</strong>, lalu lanjutkan. Setiap soal memiliki <strong>2 kesempatan</strong>.</p><div class="two-col"><label>Bab<select id="qchap" class="select" style="width:100%"><option value="">Semua Bab</option>${chapters.map(c=>`<option value="${c.bab}" ${state.chapter===c.bab?'selected':''}>Bab ${c.bab} — ${esc(c.korea)}</option>`).join('')}</select></label><label>Jumlah soal<select id="qcount" class="select" style="width:100%"><option>10</option><option>20</option><option>30</option><option>50</option><option>100</option><option>Semua</option></select></label></div><div class="notice" style="margin-top:16px">Jawaban tidak akan diproses hanya karena opsi dipilih.</div><div class="actions"><button class="btn primary" id="startQ">Mulai Latihan →</button></div></div></div>`;
+    app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card"><div class="eyebrow">LATIHAN SOAL</div><h1>Uji kosakata.</h1><p class="muted">Pilih jawaban lalu tekan <strong>Jawab</strong>. Jika benar, soal berikutnya terbuka otomatis. Setiap soal memiliki <strong>2 kesempatan</strong>.</p><div class="two-col"><label>Bab<select id="qchap" class="select" style="width:100%"><option value="">Semua Bab</option>${chapters.map(c=>`<option value="${c.bab}" ${state.chapter===c.bab?'selected':''}>Bab ${c.bab} — ${esc(c.korea)}</option>`).join('')}</select></label><label>Jumlah soal<select id="qcount" class="select" style="width:100%"><option>10</option><option>20</option><option>30</option><option>50</option><option>100</option><option>Semua</option></select></label></div><div class="notice" style="margin-top:16px">Jawaban tidak akan diproses hanya karena opsi dipilih.</div><div class="actions"><button class="btn primary" id="startQ">Mulai Latihan →</button></div></div></div>`;
     document.getElementById('startQ').onclick=()=>{state.chapter=Number(document.getElementById('qchap').value)||null;const pool=(state.chapter?itemsFor(state.chapter):vocab).slice().sort(()=>Math.random()-.5);const selected=document.getElementById('qcount').value;const requested=selected==='Semua'?pool.length:Number(selected);state.quiz=makeQuizState(pool,Math.min(requested,pool.length));render();};
     updateActiveNav(); return;
   }
@@ -309,7 +320,7 @@ function quizView() {
       q.score++; progress.correct=(progress.correct||0)+1; progress.answered=(progress.answered||0)+1; progress.seen[key]=true; progress.rightByWord[key]=(progress.rightByWord[key]||0)+1;
       if(q.attempts>0) q.review.push({ ...v, correct:true, answer:q.tried?.[0] || answer });
       if(progress.rightByWord[key]>=2 && (progress.wrongByWord[key]||0)===0) progress.mastered[key]=true;
-      awardXp(10); updateStreak(); q.pendingNext=true; q.locked=false; q.feedback={type:'correct',title:'Jawaban benar!',message:'+10 XP. Tekan “Soal Berikutnya” untuk melanjutkan.'}; save(); checkAchievements(); render(); toastMsg('Benar! +10 XP'); return;
+      awardXp(10); updateStreak(); q.pendingNext=true; q.locked=false; q.feedback={type:'correct',title:'Jawaban benar!',message:'+10 XP · soal berikutnya…'}; save(); checkAchievements(); render(); toastMsg('Benar! +10 XP'); setTimeout(()=>{ if(state.quiz===q && q.pendingNext){ q.i++; q.attempts=0; q.tried=[]; q.choices=null; q.selected=null; q.pendingNext=false; q.feedback=null; q.locked=false; render(); } }, 650); return;
     }
     q.attempts=(q.attempts||0)+1; q.wrong=(q.wrong||0)+1; progress.wrong=(progress.wrong||0)+1; progress.wrongByWord[key]=(progress.wrongByWord[key]||0)+1; delete progress.mastered[key]; q.tried=q.tried||[]; if(!q.tried.includes(answer))q.tried.push(answer); q.selected=null;
     if(q.attempts<2){
