@@ -82,3 +82,10 @@ Data tetap menggunakan `data/vocabulary.json` (2.355 entri) dan `data/chapters.j
 - Search kosakata dapat digunakan untuk seluruh Bab 1–30 dan mencari nomor/judul Bab.
 - Setiap kartu kosakata menampilkan nomor + nama Bab.
 - UI diringankan: tanpa radial background besar, blur berat, dan shadow berlebihan.
+
+
+### Feature Pack 04 — Quiz Feedback
+- Pilihan jawaban tidak lagi menjalankan animasi kedip saat dipilih.
+- Jawaban benar menampilkan popup tengah `✓ Jawaban Benar!` sebelum otomatis pindah ke soal berikutnya.
+- Popup benar menampilkan jawaban yang benar dan +10 XP.
+- Popup salah/aturan 2 kesempatan tetap dipertahankan.

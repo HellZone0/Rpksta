@@ -70,6 +70,35 @@ function closeQuizFeedback() {
   if (!infoModal || infoModal.classList.contains('hidden')) document.body.classList.remove('modal-open');
 }
 
+function openQuizCorrectFeedback({answer=''}) {
+  if (!quizFeedbackModal) return;
+  const icon = document.getElementById('quizFeedbackIcon');
+  const title = document.getElementById('quizFeedbackTitle');
+  const message = document.getElementById('quizFeedbackMessage');
+  const answerBox = document.getElementById('quizFeedbackAnswer');
+  const action = document.getElementById('quizFeedbackAction');
+  quizFeedbackModal.classList.remove('is-final');
+  icon.textContent = '✓';
+  icon.className = 'quiz-feedback-icon correct';
+  title.textContent = 'Jawaban Benar!';
+  message.textContent = '+10 XP · Jawaban kamu tepat. Soal berikutnya akan terbuka otomatis.';
+  if (answer) {
+    answerBox.classList.remove('hidden');
+    answerBox.innerHTML = `<span>Jawaban benar</span><strong>${esc(answer)}</strong>`;
+  } else {
+    answerBox.classList.add('hidden');
+    answerBox.innerHTML = '';
+  }
+  action.disabled = true;
+  action.textContent = 'Berikutnya otomatis…';
+  action.onclick = null;
+  const feedbackCard = quizFeedbackModal.querySelector('.quiz-feedback-card');
+  feedbackCard?.classList.remove('pop-in');
+  quizFeedbackModal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  requestAnimationFrame(() => requestAnimationFrame(() => feedbackCard?.classList.add('pop-in')));
+}
+
 function openQuizFeedback({secondChance=false, answer='', onAction}) {
   if (!quizFeedbackModal) return;
   const icon = document.getElementById('quizFeedbackIcon');
@@ -89,6 +118,7 @@ function openQuizFeedback({secondChance=false, answer='', onAction}) {
     answerBox.classList.add('hidden');
     answerBox.innerHTML = '';
   }
+  action.disabled = false;
   action.textContent = secondChance ? 'Soal Berikutnya →' : 'Coba Lagi';
   action.onclick = () => { closeQuizFeedback(); onAction?.(); };
   const feedbackCard = quizFeedbackModal.querySelector('.quiz-feedback-card');
@@ -310,7 +340,18 @@ function quizView() {
   const actionLabel=q.pendingNext?'Soal Berikutnya →':'Jawab';
   const pct=Math.round((q.i/q.pool.length)*100);
   app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card quiz-card-enter ${q.feedback?.type==='correct'?'quiz-correct':''}"><div class="quiz-meta"><span>Soal ${q.i+1}/${q.pool.length}</span><span>Kesempatan: <strong>${Math.max(0,2-attempts)}</strong> dari 2</span></div><div class="quiz-progress"><span style="width:${pct}%"></span></div><div class="quiz-question">${esc(v.korea)}</div><div class="choices">${choices.map((c,i)=>{const isSelected=selected===c.arti;const tried=q.tried?.includes(c.arti);const cls=`choice ${isSelected?'selected':''} ${tried?'tried':''}`;return `<button class="${cls}" style="--choice-i:${i}" data-answer="${encodeURIComponent(c.arti)}" ${tried||q.pendingNext?'disabled':''} aria-pressed="${isSelected?'true':'false'}">${esc(c.arti)}</button>`;}).join('')}</div><div class="actions quiz-actions"><button class="btn" id="quitQ">Keluar</button><button class="btn primary answer-main-btn" id="answerQ" ${canAnswer||q.pendingNext?'':'disabled'}>${actionLabel}</button></div></div></div>`;
-  document.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{if(q.locked||q.pendingNext)return;q.selected=decodeURIComponent(btn.dataset.answer);q.feedback=null;render();});
+  document.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{
+    if(q.locked||q.pendingNext)return;
+    q.selected=decodeURIComponent(btn.dataset.answer);
+    q.feedback=null;
+    document.querySelectorAll('[data-answer]').forEach(b=>{
+      const active=b===btn;
+      b.classList.toggle('selected',active);
+      b.setAttribute('aria-pressed',active?'true':'false');
+    });
+    const answerBtn=document.getElementById('answerQ');
+    if(answerBtn) answerBtn.disabled=false;
+  });
   document.getElementById('answerQ').onclick=()=>{
     if(q.pendingNext){q.i++;q.attempts=0;q.tried=[];q.choices=null;q.selected=null;q.pendingNext=false;q.feedback=null;q.locked=false;render();return;}
     if(!q.selected||q.locked)return;
@@ -320,7 +361,9 @@ function quizView() {
       q.score++; progress.correct=(progress.correct||0)+1; progress.answered=(progress.answered||0)+1; progress.seen[key]=true; progress.rightByWord[key]=(progress.rightByWord[key]||0)+1;
       if(q.attempts>0) q.review.push({ ...v, correct:true, answer:q.tried?.[0] || answer });
       if(progress.rightByWord[key]>=2 && (progress.wrongByWord[key]||0)===0) progress.mastered[key]=true;
-      awardXp(10); updateStreak(); q.pendingNext=true; q.locked=false; q.feedback={type:'correct',title:'Jawaban benar!',message:'+10 XP · soal berikutnya…'}; save(); checkAchievements(); render(); toastMsg('Benar! +10 XP'); setTimeout(()=>{ if(state.quiz===q && q.pendingNext){ q.i++; q.attempts=0; q.tried=[]; q.choices=null; q.selected=null; q.pendingNext=false; q.feedback=null; q.locked=false; render(); } }, 650); return;
+      awardXp(10); updateStreak(); q.pendingNext=true; q.locked=false; q.feedback={type:'correct',title:'Jawaban Benar!',message:'+10 XP · Jawaban kamu tepat.'}; save(); checkAchievements(); render();
+      requestAnimationFrame(()=>openQuizCorrectFeedback({answer:v.arti}));
+      setTimeout(()=>{ if(state.quiz===q && q.pendingNext){ q.i++; q.attempts=0; q.tried=[]; q.choices=null; q.selected=null; q.pendingNext=false; q.feedback=null; q.locked=false; render(); } }, 1100); return;
     }
     q.attempts=(q.attempts||0)+1; q.wrong=(q.wrong||0)+1; progress.wrong=(progress.wrong||0)+1; progress.wrongByWord[key]=(progress.wrongByWord[key]||0)+1; delete progress.mastered[key]; q.tried=q.tried||[]; if(!q.tried.includes(answer))q.tried.push(answer); q.selected=null;
     if(q.attempts<2){
