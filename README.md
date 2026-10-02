@@ -122,7 +122,7 @@ Data tetap menggunakan `data/vocabulary.json` (2.355 entri) dan `data/chapters.j
 - Speech rate is slightly reduced to 0.80 for clearer listening.
 - Existing quiz, listening, exam, UI, data, and progress features are preserved.
 
-## Feature Pack 10 additions
+## Feature Pack 11 additions
 - Review Terjadwal (spaced repetition)
 - Daily Challenge 10 soal + bonus XP harian
 - Pengaturan kecepatan audio Korea dan jeda tanda `/`
