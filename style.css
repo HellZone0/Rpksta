@@ -128,3 +128,20 @@ body:before,.hero:before{display:none!important}
   .card{border-radius:14px;padding:15px}
   .btn{box-shadow:none!important}
 }
+/* Feature Pack 05 — learning expansion */
+.choice.selected{animation:none!important}
+.choice:active{animation:none!important}
+.audio-btn{margin-top:12px;min-height:42px}
+.mode-label{display:block;margin-top:14px}
+.focus-panel{margin-top:14px}
+.listening-hint{font-size:.8rem;color:var(--muted)}
+@media(max-width:650px){.audio-btn{width:100%}}
+
+/* Feature Pack 06 — preserve the lightweight Feature Pack 03 UI */
+body:before,.hero:before{display:none!important}
+.topbar{backdrop-filter:none!important}
+.card,.feature-card,.quiz-card,.level-card,.stat-card{backdrop-filter:none!important}
+.choice.selected{animation:none!important}
+.choice:active{animation:none!important}
+.quiz-feedback-icon.correct{color:var(--good,#20d47a)!important;background:rgba(32,212,122,.12)!important;border-color:rgba(32,212,122,.35)!important}
+#quizFeedbackModal .quiz-feedback-action:disabled{opacity:.72;cursor:default}

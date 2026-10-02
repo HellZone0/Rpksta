@@ -89,3 +89,10 @@ Data tetap menggunakan `data/vocabulary.json` (2.355 entri) dan `data/chapters.j
 - Jawaban benar menampilkan popup tengah `✓ Jawaban Benar!` sebelum otomatis pindah ke soal berikutnya.
 - Popup benar menampilkan jawaban yang benar dan +10 XP.
 - Popup salah/aturan 2 kesempatan tetap dipertahankan.
+
+
+## Feature Pack 06 — No Regression Build
+- Base UI retained from Feature Pack 03: lightweight cards, reduced shadows, no heavy radial/background effects, global search, chapter labels.
+- Feature Pack 04 quiz feedback retained: selection does not blink; correct-answer center popup; auto-next; two-attempt wrong-answer flow.
+- Feature Pack 05 learning suite retained: Korean speech synthesis, listening mode, difficult/review modes, exam simulation, source filter, backup/restore, progress/streak/XP/achievements, PWA.
+- Service worker updated to network-first for app-shell files and cache-busted assets to reduce stale deployment issues.

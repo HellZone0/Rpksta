@@ -1,3 +1,4 @@
+// Feature Pack 06: merged from Feature Pack 03 (light UI + global search/chapter labels), Feature Pack 04 (quiz feedback), and Feature Pack 05 (learning suite/audio).
 // Feature Pack 03 — auto-next, global search, chapter labels, lightweight UI
 let chapters = [];
 let vocab = [];
@@ -9,13 +10,13 @@ const quizFeedbackModal = document.getElementById('quizFeedbackModal');
 const state = {
   view: 'home', chapter: null, search: '', cat: 'Semua', status: 'Semua',
   flashIndex: 0, flashShow: false, flashPool: null,
-  quiz: null, review: null
+  quiz: null, review: null, source: 'Semua'
 };
 
 const STORE = 'epsTopikProgress';
 const SETTINGS = 'epsTopikSettings';
 const CREATOR_SEEN = 'epsTopikCreatorSeen';
-const DATA_VERSION = '20260928-feature-pack-02-motion';
+const DATA_VERSION = '20261002-feature-pack-06';
 
 const defaultProgress = {
   correct: 0, wrong: 0, answered: 0, xp: 0, streak: 0, lastDate: '',
@@ -37,6 +38,8 @@ progress.mastered ||= {};
 progress.favorites ||= {};
 progress.achievements ||= {};
 progress.quizHistory ||= [];
+progress.studyDays ||= {};
+progress.listening ||= 0;
 let settings = readJSON(SETTINGS, { theme: 'dark' });
 
 document.documentElement.dataset.theme = settings.theme === 'dark' ? 'dark' : 'light';
@@ -145,6 +148,18 @@ function wordStats(v) {
   const key = wordKey(v);
   return { wrong: progress.wrongByWord[key] || 0, right: progress.rightByWord[key] || 0, seen: !!progress.seen[key], mastered: !!progress.mastered[key], favorite: !!progress.favorites[key] };
 }
+function speakKorean(text) {
+  if (!('speechSynthesis' in window)) { toastMsg('Browser ini belum mendukung audio Korea.'); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ko-KR'; u.rate = .82; u.pitch = 1;
+  speechSynthesis.speak(u);
+}
+function filteredBase() {
+  return state.source === 'Semua' ? vocab : vocab.filter(v => v.sumber === state.source);
+}
+function difficultPool(base=vocab) { return base.filter(v => mastery(v)==='salah' || (progress.wrongByWord[wordKey(v)]||0) >= 1); }
+function recordStudyDay(){ const d=new Date().toISOString().slice(0,10); progress.studyDays[d]=true; updateStreak(); }
 function mastery(v) {
   const s = wordStats(v);
   if (s.mastered || (s.right >= 2 && s.wrong === 0)) return 'dikuasai';
@@ -245,7 +260,7 @@ function home() {
   <div class="dashboard-stats"><div class="mini-stat"><span class="muted">Total kosakata</span><strong>${total.toLocaleString('id-ID')}</strong></div><div class="mini-stat"><span class="muted">Akurasi</span><strong>${accuracy()}%</strong></div><div class="mini-stat"><span class="muted">Streak</span><strong>🔥 ${progress.streak || 0}</strong></div></div>
   <div class="card level-card"><div><span class="eyebrow">LEVEL BELAJAR</span><h2>Level ${level.level} · ${esc(level.name)}</h2><p class="muted">${progress.xp || 0} XP total · ${Math.max(0, level.next-(progress.xp||0))} XP menuju level berikutnya</p></div><div class="level-ring"><strong>${level.level}</strong><span>LEVEL</span></div><div class="level-progress"><div class="progress"><span style="width:${level.pct}%"></span></div><small>${level.pct}% ke level berikutnya</small></div></div>
   <div class="section-head"><div><h2>Bab tersedia</h2><p class="muted">Mulai dari Bab 1 atau pilih bab tertentu.</p></div><button class="btn" data-action="chapters">Lihat semua</button></div><div class="grid">${chapters.slice(0,6).map(chapterCard).join('')}</div>
-  <div class="section-head"><div><h2>Fokus belajar</h2><p class="muted">Kata yang belum dikuasai dan sering salah akan lebih mudah ditemukan.</p></div></div><div class="grid"><div class="card feature-card"><div class="feature-icon">🔴</div><h3>Kosakata Sulit</h3><p class="muted">Latih kembali kata yang sering salah.</p><button class="btn" data-action="vocab" data-status="salah">Latihan Kata Sulit</button></div><div class="card feature-card"><div class="feature-icon">🃏</div><h3>Kartu Belajar</h3><p class="muted">Balik kartu dengan animasi dan tandai “Saya tahu”.</p><button class="btn" data-action="flashcards">Buka Kartu</button></div><div class="card feature-card"><div class="feature-icon">🏆</div><h3>Pencapaian</h3><p class="muted">${earnedAchievements().length} / ${achievementDefs.length} pencapaian terbuka.</p><button class="btn" data-action="stats">Lihat Statistik</button></div></div>`;
+  <div class="section-head"><div><h2>Fokus belajar</h2><p class="muted">Kata yang belum dikuasai dan sering salah akan lebih mudah ditemukan.</p></div></div><div class="grid"><div class="card feature-card"><div class="feature-icon">🎯</div><h3>Simulasi Ujian</h3><p class="muted">Mode ujian tanpa feedback langsung.</p><button class="btn" data-action="quiz" data-mode="exam">Mulai Simulasi</button></div><div class="card feature-card"><div class="feature-icon">🔴</div><h3>Kosakata Sulit</h3><p class="muted">Latih kembali kata yang sering salah.</p><button class="btn" data-action="vocab" data-status="salah">Latihan Kata Sulit</button></div><div class="card feature-card"><div class="feature-icon">🃏</div><h3>Kartu Belajar</h3><p class="muted">Balik kartu dengan animasi dan tandai “Saya tahu”.</p><button class="btn" data-action="flashcards">Buka Kartu</button></div><div class="card feature-card"><div class="feature-icon">🔊</div><h3>Listening Korea</h3><p class="muted">Dengarkan pelafalan Korea lalu pilih arti yang benar.</p><button class="btn" data-action="quiz" data-mode="listening">Mulai Listening</button></div><div class="card feature-card"><div class="feature-icon">🏆</div><h3>Pencapaian</h3><p class="muted">${earnedAchievements().length} / ${achievementDefs.length} pencapaian terbuka.</p><button class="btn" data-action="stats">Lihat Statistik</button></div></div>`;
   bindActions(); updateActiveNav();
 }
 
@@ -264,7 +279,7 @@ function chapterList() {
 
 function vocabView() {
   const ch = state.chapter;
-  const base = ch ? itemsFor(ch) : vocab;
+  const base = (ch ? itemsFor(ch) : vocab).filter(v => state.source === 'Semua' || v.sumber === state.source);
   const cats = [...new Set(base.map(v => v.kategori))];
   if (state.cat !== 'Semua' && !cats.includes(state.cat)) state.cat = 'Semua';
   const qSearch = state.search.trim().toLowerCase();
@@ -277,12 +292,13 @@ function vocabView() {
   });
   const statusCounts = { semua:base.length, belum:base.filter(v=>mastery(v)==='belum').length, perlu:base.filter(v=>mastery(v)==='perlu').length, salah:base.filter(v=>mastery(v)==='salah').length, dikuasai:base.filter(v=>mastery(v)==='dikuasai').length };
   app.innerHTML = `<div class="section-head"><div><div class="eyebrow">KOSAKATA</div><h1>${ch ? `Bab ${ch} — ${esc(chapters[ch-1].korea)}` : 'Semua Kosakata'}</h1><p class="muted">${ch ? esc(chapters[ch-1].indonesia) : 'Kosakata EPS-TOPIK Bab 1–30'}</p></div><button class="btn" data-action="chapters">Daftar Bab</button></div>
-  <div class="toolbar"><input id="vsearch" class="search" placeholder="Cari Korea, Indonesia, kategori, atau Bab..." value="${esc(state.search)}"><select id="vchapter" class="select"><option value="">Semua Bab</option>${chapters.map(c=>`<option value="${c.bab}" ${ch===c.bab?'selected':''}>Bab ${c.bab} — ${esc(c.korea)}</option>`).join('')}</select><select id="vcat" class="select"><option>Semua</option>${cats.map(x=>`<option ${x===state.cat?'selected':''}>${esc(x)}</option>`).join('')}</select>${ch ? `<button class="btn primary" data-flash="${ch}">Kartu Bab Ini</button>` : ''}</div>
+  <div class="toolbar"><input id="vsearch" class="search" placeholder="Cari Korea, Indonesia, kategori, atau Bab..." value="${esc(state.search)}"><select id="vchapter" class="select"><option value="">Semua Bab</option>${chapters.map(c=>`<option value="${c.bab}" ${ch===c.bab?'selected':''}>Bab ${c.bab} — ${esc(c.korea)}</option>`).join('')}</select><select id="vsource" class="select"><option>Semua</option><option value="어휘" ${state.source==='어휘'?'selected':''}>어휘</option><option value="문화와 정보" ${state.source==='문화와 정보'?'selected':''}>문화와 정보</option></select><select id="vcat" class="select"><option>Semua</option>${cats.map(x=>`<option ${x===state.cat?'selected':''}>${esc(x)}</option>`).join('')}</select>${ch ? `<button class="btn primary" data-flash="${ch}">Kartu Bab Ini</button>` : ''}</div>
   <div class="mastery-pills"><button class="pill ${state.status==='Semua'?'active':''}" data-status="Semua">Semua <b>${statusCounts.semua}</b></button><button class="pill ${state.status==='belum'?'active':''}" data-status="belum">⚪ Belum <b>${statusCounts.belum}</b></button><button class="pill ${state.status==='perlu'?'active':''}" data-status="perlu">🟡 Perlu latihan <b>${statusCounts.perlu}</b></button><button class="pill ${state.status==='salah'?'active':''}" data-status="salah">🔴 Sering salah <b>${statusCounts.salah}</b></button><button class="pill ${state.status==='dikuasai'?'active':''}" data-status="dikuasai">🟢 Dikuasai <b>${statusCounts.dikuasai}</b></button></div>
   <div class="notice">Menampilkan <strong>${list.length}</strong> kosakata${ch ? ` dari Bab ${ch}` : ''}. Status setiap kata tersimpan otomatis di perangkat.</div>
   <div class="vocab-list">${list.length ? list.map(v => vocabItem(v)).join('') : `<div class="card empty">Kosakata dengan filter ini belum tersedia.</div>`}</div><p class="source-note">Data disusun dari entri 어휘/KOSAKATA Bab 1–30 serta istilah leksikal dari bagian 문화와 정보/Budaya & Informasi pada PDF EPS-TOPIK yang diberikan.</p>`;
   document.getElementById('vsearch').addEventListener('input', e => { state.search = e.target.value; render(); const el=document.getElementById('vsearch'); if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);} });
   document.getElementById('vchapter').addEventListener('change', e => { state.chapter = Number(e.target.value) || null; state.cat='Semua'; state.status='Semua'; render(); });
+  document.getElementById('vsource').addEventListener('change', e => { state.source=e.target.value; state.cat='Semua'; render(); });
   document.getElementById('vcat').addEventListener('change', e => { state.cat=e.target.value; render(); });
   document.querySelectorAll('[data-status]').forEach(b => b.onclick = () => { state.status=b.dataset.status; render(); });
   bindActions(); updateActiveNav();
@@ -291,7 +307,7 @@ function vocabItem(v) {
   const s = wordStats(v);
   const chInfo = chapters[v.bab-1] || {};
   const chapterLabel = `Bab ${v.bab} · ${chInfo.korea || ''}`;
-  return `<div class="vocab-item ${masteryClass(v)}"><div class="word-main"><div class="ko">${esc(v.korea)}</div><div class="meaning">${esc(v.arti)}</div><div class="vocab-chapter">${esc(chapterLabel)}${chInfo.indonesia ? ` — ${esc(chInfo.indonesia)}` : ''}</div><div class="word-meta"><span class="status-chip">${masteryLabel(v)}</span>${s.wrong?`<span class="mistake-chip">${s.wrong}× salah</span>`:''}${s.favorite?'<span class="favorite-chip">★ Disimpan</span>':''}</div></div><span class="cat">${esc(v.kategori)}</span><div class="word-actions"><button class="round-btn favorite-btn ${s.favorite?'is-favorite':''}" data-favorite="${encodeURIComponent(wordKey(v))}" title="Simpan kata" aria-label="Simpan kata">${s.favorite?'★':'☆'}</button><button class="round-btn" data-oneflash="${encodeURIComponent(wordKey(v))}" title="Buka kartu" aria-label="Buka kartu">🃏</button></div></div>`;
+  return `<div class="vocab-item ${masteryClass(v)}"><div class="word-main"><div class="ko">${esc(v.korea)}</div><div class="meaning">${esc(v.arti)}</div><div class="vocab-chapter">${esc(chapterLabel)}${chInfo.indonesia ? ` — ${esc(chInfo.indonesia)}` : ''}</div><div class="word-meta"><span class="status-chip">${masteryLabel(v)}</span>${s.wrong?`<span class="mistake-chip">${s.wrong}× salah</span>`:''}${s.favorite?'<span class="favorite-chip">★ Disimpan</span>':''}</div></div><span class="cat">${esc(v.kategori)}</span><div class="word-actions"><button class="round-btn" data-speak="${encodeURIComponent(v.korea)}" title="Dengarkan pelafalan Korea" aria-label="Dengarkan pelafalan Korea">🔊</button><button class="round-btn favorite-btn ${s.favorite?'is-favorite':''}" data-favorite="${encodeURIComponent(wordKey(v))}" title="Simpan kata" aria-label="Simpan kata">${s.favorite?'★':'☆'}</button><button class="round-btn" data-oneflash="${encodeURIComponent(wordKey(v))}" title="Buka kartu" aria-label="Buka kartu">🃏</button></div></div>`;
 }
 
 function flashcards() {
@@ -303,10 +319,11 @@ function flashcards() {
   const s = wordStats(v);
   app.innerHTML = `<div class="section-head"><div><div class="eyebrow">KARTU BELAJAR</div><h1>Ulangi sampai ingat.</h1><p class="muted">${state.chapter ? `Bab ${state.chapter} — ${esc(chapters[state.chapter-1].korea)}` : 'Semua Bab'}</p></div><button class="btn" data-action="chapters">Pilih Bab</button></div>
   <div class="flash-toolbar"><span class="status-chip ${masteryClass(v)}">${masteryLabel(v)}</span><span class="muted">${state.flashIndex+1} / ${pool.length}</span></div>
-  <div class="quiz-wrap"><div class="flash-scene ${state.flashShow?'flipped':''}" id="flash" tabindex="0" role="button" aria-label="Kartu belajar, ketuk untuk membalik"><div class="flash-inner"><div class="flash-face flash-front"><span class="cat">${esc(v.kategori)}</span><div class="flash-main">${esc(v.korea)}</div><div class="flash-hint">Ketuk untuk melihat arti</div></div><div class="flash-face flash-back"><span class="cat">Arti Indonesia</span><div class="flash-main flash-meaning">${esc(v.arti)}</div><div class="flash-hint">${esc(v.korea)}</div></div></div></div>
+  <div class="quiz-wrap"><div class="flash-scene ${state.flashShow?'flipped':''}" id="flash" tabindex="0" role="button" aria-label="Kartu belajar, ketuk untuk membalik"><div class="flash-inner"><div class="flash-face flash-front"><span class="cat">${esc(v.kategori)}</span><div class="flash-main">${esc(v.korea)}</div><button class="btn audio-btn" id="speakFlash">🔊 Dengarkan</button><div class="flash-hint">Ketuk untuk melihat arti</div></div><div class="flash-face flash-back"><span class="cat">Arti Indonesia</span><div class="flash-main flash-meaning">${esc(v.arti)}</div><div class="flash-hint">${esc(v.korea)}</div></div></div></div>
   <div class="flash-controls"><button class="btn" id="prevFlash">← Sebelumnya</button><button class="btn" id="repeatFlash">↻ Perlu diulang</button><button class="btn primary" id="knowFlash">✓ Saya tahu</button><button class="btn" id="nextFlash">Berikutnya →</button></div></div>`;
   const flip=()=>{state.flashShow=!state.flashShow;render();};
-  document.getElementById('flash').onclick=flip;
+  document.getElementById('flash').onclick=(e)=>{if(e.target.closest('#speakFlash')) return; flip();};
+  document.getElementById('speakFlash').onclick=e=>{e.stopPropagation();speakKorean(v.korea);};
   document.getElementById('flash').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip();}};
   document.getElementById('prevFlash').onclick=()=>{state.flashIndex=(state.flashIndex-1+pool.length)%pool.length;state.flashShow=false;render();};
   document.getElementById('nextFlash').onclick=()=>{state.flashIndex=(state.flashIndex+1)%pool.length;state.flashShow=false;render();};
@@ -323,23 +340,36 @@ function makeChoices(v,pool) {
   if(result.length<4) for(const x of vocab.slice().sort(()=>Math.random()-.5)){if(x!==v&&!used.has(x.arti)){result.push(x);used.add(x.arti);if(result.length===4)break;}}
   return result.sort(()=>Math.random()-.5);
 }
-function makeQuizState(pool,n) { return {pool:pool.slice(0,n),questionCount:n,i:0,score:0,wrong:0,mode:'campuran',locked:false,attempts:0,tried:[],choices:null,selected:null,pendingNext:false,feedback:null,review:[]}; }
+function makeQuizState(pool,n,mode='campuran') { return {pool:pool.slice(0,n),questionCount:n,i:0,score:0,wrong:0,mode,locked:false,attempts:0,tried:[],choices:null,selected:null,pendingNext:false,feedback:null,review:[]}; }
 
 function quizView() {
   if (!state.quiz) {
-    app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card"><div class="eyebrow">LATIHAN SOAL</div><h1>Uji kosakata.</h1><p class="muted">Pilih jawaban lalu tekan <strong>Jawab</strong>. Jika benar, soal berikutnya terbuka otomatis. Setiap soal memiliki <strong>2 kesempatan</strong>.</p><div class="two-col"><label>Bab<select id="qchap" class="select" style="width:100%"><option value="">Semua Bab</option>${chapters.map(c=>`<option value="${c.bab}" ${state.chapter===c.bab?'selected':''}>Bab ${c.bab} — ${esc(c.korea)}</option>`).join('')}</select></label><label>Jumlah soal<select id="qcount" class="select" style="width:100%"><option>10</option><option>20</option><option>30</option><option>50</option><option>100</option><option>Semua</option></select></label></div><div class="notice" style="margin-top:16px">Jawaban tidak akan diproses hanya karena opsi dipilih.</div><div class="actions"><button class="btn primary" id="startQ">Mulai Latihan →</button></div></div></div>`;
-    document.getElementById('startQ').onclick=()=>{state.chapter=Number(document.getElementById('qchap').value)||null;const pool=(state.chapter?itemsFor(state.chapter):vocab).slice().sort(()=>Math.random()-.5);const selected=document.getElementById('qcount').value;const requested=selected==='Semua'?pool.length:Number(selected);state.quiz=makeQuizState(pool,Math.min(requested,pool.length));render();};
-    updateActiveNav(); return;
+    const mode = state.pendingQuizMode || 'campuran';
+    state.pendingQuizMode = null;
+    app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card quiz-card-enter"><div class="eyebrow">LATIHAN SOAL</div><h1>Uji kosakata.</h1><p class="muted">Pilih mode belajar, lalu mulai. Mode belajar memberi feedback; simulasi ujian menampilkan hasil di akhir.</p><div class="two-col"><label>Bab<select id="qchap" class="select" style="width:100%"><option value="">Semua Bab</option>${chapters.map(c=>`<option value="${c.bab}" ${state.chapter===c.bab?'selected':''}>Bab ${c.bab} — ${esc(c.korea)}</option>`).join('')}</select></label><label>Jumlah soal<select id="qcount" class="select" style="width:100%"><option>10</option><option>20</option><option>30</option><option>50</option><option>100</option><option>Semua</option></select></label></div><label class="mode-label">Mode<select id="qmode" class="select" style="width:100%"><option value="campuran" ${mode==='campuran'?'selected':''}>Campuran</option><option value="listening" ${mode==='listening'?'selected':''}>🔊 Listening Korea</option><option value="hard" ${mode==='hard'?'selected':''}>🔴 Kosakata Sulit</option><option value="review" ${mode==='review'?'selected':''}>📝 Review Jawaban Salah</option><option value="exam" ${mode==='exam'?'selected':''}>🎯 Simulasi Ujian</option></select></label><div class="notice">Listening menggunakan suara Korea dari Speech Synthesis browser. Simulasi ujian tidak memberi tahu benar/salah sampai selesai.</div><div class="actions"><button class="btn primary" id="startQ">Mulai Latihan →</button></div></div></div>`;
+    document.getElementById('startQ').onclick=()=>{
+      state.chapter=Number(document.getElementById('qchap').value)||null; const poolBase=(state.chapter?itemsFor(state.chapter):vocab); const modeNow=document.getElementById('qmode').value; let pool=poolBase.slice();
+      if(modeNow==='hard') pool=difficultPool(pool);
+      if(modeNow==='review') pool=pool.filter(v=>(progress.wrongByWord[wordKey(v)]||0)>0);
+      if(!pool.length){toastMsg('Belum ada kosakata untuk mode ini.');return;}
+      pool.sort(()=>Math.random()-.5); const selected=document.getElementById('qcount').value; const requested=selected==='Semua'?pool.length:Number(selected); const exam=modeNow==='exam'; state.quiz=makeQuizState(pool,Math.min(requested,pool.length),modeNow); state.quiz.timer=exam?1200:0; recordStudyDay(); save(); render(); if(modeNow==='listening') setTimeout(()=>speakKorean(state.quiz.pool[state.quiz.i].korea),300);
+    }; updateActiveNav(); return;
   }
   const q=state.quiz;
   if(q.i>=q.pool.length) return quizResult();
+  if(q.mode==='exam' && q.timerEnd && Date.now()>=q.timerEnd){ q.i=q.pool.length; return quizResult(); }
+  if(q.mode==='exam' && q.timerEnd) setTimeout(()=>{if(state.quiz===q)render();},1000);
   const v=q.pool[q.i];
   if(!q.choices) q.choices=makeChoices(v,q.pool);
   const choices=q.choices, attempts=q.attempts||0, selected=q.selected||null, feedback=q.feedback;
   const canAnswer=!!selected&&!q.pendingNext&&!q.locked;
   const actionLabel=q.pendingNext?'Soal Berikutnya →':'Jawab';
   const pct=Math.round((q.i/q.pool.length)*100);
-  app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card quiz-card-enter ${q.feedback?.type==='correct'?'quiz-correct':''}"><div class="quiz-meta"><span>Soal ${q.i+1}/${q.pool.length}</span><span>Kesempatan: <strong>${Math.max(0,2-attempts)}</strong> dari 2</span></div><div class="quiz-progress"><span style="width:${pct}%"></span></div><div class="quiz-question">${esc(v.korea)}</div><div class="choices">${choices.map((c,i)=>{const isSelected=selected===c.arti;const tried=q.tried?.includes(c.arti);const cls=`choice ${isSelected?'selected':''} ${tried?'tried':''}`;return `<button class="${cls}" style="--choice-i:${i}" data-answer="${encodeURIComponent(c.arti)}" ${tried||q.pendingNext?'disabled':''} aria-pressed="${isSelected?'true':'false'}">${esc(c.arti)}</button>`;}).join('')}</div><div class="actions quiz-actions"><button class="btn" id="quitQ">Keluar</button><button class="btn primary answer-main-btn" id="answerQ" ${canAnswer||q.pendingNext?'':'disabled'}>${actionLabel}</button></div></div></div>`;
+  if(q.mode==='exam' && !q.timerStarted){q.timerStarted=Date.now();q.timerEnd=q.timerStarted+(q.timer||60)*1000;}
+  const examLeft=q.mode==='exam'?Math.max(0,Math.ceil((q.timerEnd-Date.now())/1000)):0;
+  const questionText=q.mode==='listening'?'🔊 Dengarkan audio Korea, lalu pilih artinya.':esc(v.korea);
+  app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card quiz-card-enter ${q.feedback?.type==='correct'?'quiz-correct':''}"><div class="quiz-meta"><span>Soal ${q.i+1}/${q.pool.length}</span><span>${q.mode==='exam'?`⏱ ${examLeft} dtk · `:''}${q.mode==='exam'?'Ujian · ':' '}Kesempatan: <strong>${Math.max(0,2-attempts)}</strong> dari 2</span></div><div class="quiz-progress"><span style="width:${pct}%"></span></div><div class="quiz-question">${questionText}${q.mode==='listening'?`<button class="btn audio-btn" id="speakQ">🔊 Putar Lagi</button>`:''}</div><div class="choices">${choices.map((c,i)=>{const isSelected=selected===c.arti;const tried=q.tried?.includes(c.arti);const cls=`choice ${isSelected?'selected':''} ${tried?'tried':''}`;return `<button class="${cls}" style="--choice-i:${i}" data-answer="${encodeURIComponent(c.arti)}" ${tried||q.pendingNext?'disabled':''} aria-pressed="${isSelected?'true':'false'}">${esc(c.arti)}</button>`;}).join('')}</div><div class="actions quiz-actions"><button class="btn" id="quitQ">Keluar</button><button class="btn primary answer-main-btn" id="answerQ" ${canAnswer||q.pendingNext?'':'disabled'}>${actionLabel}</button></div></div></div>`;
+  if(q.mode==='listening'){ document.getElementById('speakQ')?.addEventListener('click',()=>speakKorean(v.korea)); setTimeout(()=>{if(state.quiz===q && !quizFeedbackModal?.classList.contains('hidden')) return;speakKorean(v.korea);},250); }
   document.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{
     if(q.locked||q.pendingNext)return;
     q.selected=decodeURIComponent(btn.dataset.answer);
@@ -361,11 +391,13 @@ function quizView() {
       q.score++; progress.correct=(progress.correct||0)+1; progress.answered=(progress.answered||0)+1; progress.seen[key]=true; progress.rightByWord[key]=(progress.rightByWord[key]||0)+1;
       if(q.attempts>0) q.review.push({ ...v, correct:true, answer:q.tried?.[0] || answer });
       if(progress.rightByWord[key]>=2 && (progress.wrongByWord[key]||0)===0) progress.mastered[key]=true;
+      if(q.mode==='exam'){ q.pendingNext=true; q.locked=false; q.feedback=null; save(); setTimeout(()=>{if(state.quiz===q){q.i++;q.attempts=0;q.tried=[];q.choices=null;q.selected=null;q.pendingNext=false;render();}},80); return; }
       awardXp(10); updateStreak(); q.pendingNext=true; q.locked=false; q.feedback={type:'correct',title:'Jawaban Benar!',message:'+10 XP · Jawaban kamu tepat.'}; save(); checkAchievements(); render();
       requestAnimationFrame(()=>openQuizCorrectFeedback({answer:v.arti}));
       setTimeout(()=>{ if(state.quiz===q && q.pendingNext){ q.i++; q.attempts=0; q.tried=[]; q.choices=null; q.selected=null; q.pendingNext=false; q.feedback=null; q.locked=false; render(); } }, 1100); return;
     }
     q.attempts=(q.attempts||0)+1; q.wrong=(q.wrong||0)+1; progress.wrong=(progress.wrong||0)+1; progress.wrongByWord[key]=(progress.wrongByWord[key]||0)+1; delete progress.mastered[key]; q.tried=q.tried||[]; if(!q.tried.includes(answer))q.tried.push(answer); q.selected=null;
+    if(q.mode==='exam'){ progress.answered=(progress.answered||0)+1; progress.seen[key]=true; q.pendingNext=true; q.locked=false; save(); setTimeout(()=>{if(state.quiz===q){q.i++;q.attempts=0;q.tried=[];q.choices=null;q.selected=null;q.pendingNext=false;render();}},80); return; }
     if(q.attempts<2){
       q.locked=false;
       q.feedback={type:'wrong',title:'Jawaban salah.',message:'Kesempatan tersisa 1. Pilih jawaban lain lalu tekan Jawab.'};
@@ -418,16 +450,20 @@ function statsView() {
   <div class="two-col stats-main"><div class="card"><div class="eyebrow">LEVEL</div><h2>Level ${level.level} · ${esc(level.name)}</h2><p class="muted">${progress.xp||0} XP · ${Math.max(0,level.next-(progress.xp||0))} XP menuju level berikutnya</p><div class="progress"><span style="width:${level.pct}%"></span></div><small>${level.pct}%</small></div><div class="card"><div class="eyebrow">PENGUASAAN</div><h2>${seen.toLocaleString('id-ID')} / ${total.toLocaleString('id-ID')}</h2><p class="muted">Kosakata yang pernah dipelajari.</p><div class="progress"><span style="width:${pct}%"></span></div><small>${pct}% selesai</small></div></div>
   <div class="section-head"><div><div class="eyebrow">PER BAB</div><h2>Progress & akurasi</h2></div></div><div class="card chapter-stats">${chapterRows}</div>
   <div class="section-head"><div><div class="eyebrow">PENCAPAIAN</div><h2>Achievement</h2></div></div><div class="achievement-grid">${achievementDefs.map(a=>`<div class="achievement ${progress.achievements[a[0]]?'earned':''}"><div class="achievement-icon">${a[1].split(' ')[0]}</div><div><strong>${esc(a[1].slice(a[1].indexOf(' ')+1))}</strong><p class="muted">${esc(a[2])}</p></div><span>${progress.achievements[a[0]]?'✓':'🔒'}</span></div>`).join('')}</div>
-  <div class="actions"><button class="btn" id="resetStats">Reset statistik</button></div>`;
+  <div class="card focus-panel"><div class="section-head compact"><div><div class="eyebrow">FOKUS</div><h2>Latihan berikutnya</h2><p class="muted">${difficultPool(vocab).length} kosakata perlu perhatian dan ${vocab.filter(v=>(progress.wrongByWord[wordKey(v)]||0)>0).length} kosakata punya riwayat salah.</p></div></div><div class="actions"><button class="btn" data-action="quiz" data-mode="hard">🔴 Latihan Sulit</button><button class="btn" data-action="quiz" data-mode="review">📝 Review Salah</button><button class="btn" data-action="quiz" data-mode="listening">🔊 Listening</button><button class="btn" data-action="quiz" data-mode="exam">🎯 Simulasi Ujian</button></div></div><div class="actions"><button class="btn" id="exportStats">Backup Progress</button><label class="btn">Restore Progress<input id="importStats" type="file" accept="application/json" hidden></label><button class="btn" id="resetStats">Reset statistik</button></div>`;
   document.getElementById('resetStats').onclick=()=>{if(confirm('Reset statistik di perangkat ini?')){progress=structuredClone?structuredClone(defaultProgress):JSON.parse(JSON.stringify(defaultProgress));save();render();toastMsg('Statistik direset');}};
+  document.getElementById('exportStats').onclick=()=>{const blob=new Blob([JSON.stringify({version:DATA_VERSION,progress,settings},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='eps-topik-progress.json';a.click();URL.revokeObjectURL(a.href);};
+  document.getElementById('importStats').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.progress)throw Error();progress=Object.assign({},defaultProgress,d.progress);progress.seen ||= {};progress.wrongByWord ||= {};progress.rightByWord ||= {};progress.mastered ||= {};progress.favorites ||= {};progress.achievements ||= {};progress.quizHistory ||= [];save();render();toastMsg('Progress berhasil dipulihkan');}catch(err){toastMsg('File progress tidak valid');}};r.readAsText(f);};
+  bindActions();
   updateActiveNav();
 }
 
 function updateActiveNav(){document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));}
 function bindActions(){
   document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>show('vocab',{chapter:b.dataset.open}));
-  document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{if(b.dataset.status){state.status=b.dataset.status;if(b.dataset.status!=='Semua')state.chapter=null;} show(b.dataset.action);});
+  document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{if(b.dataset.status){state.status=b.dataset.status;if(b.dataset.status!=='Semua')state.chapter=null;} if(b.dataset.mode){state.pendingQuizMode=b.dataset.mode;} show(b.dataset.action);});
   document.querySelectorAll('[data-flash]').forEach(b=>b.onclick=()=>{state.chapter=Number(b.dataset.flash);state.flashIndex=0;state.flashShow=false;state.flashPool=null;show('flashcards');});
+  document.querySelectorAll('[data-speak]').forEach(b=>b.onclick=()=>speakKorean(decodeURIComponent(b.dataset.speak)));
   document.querySelectorAll('[data-favorite]').forEach(b=>b.onclick=()=>{const key=decodeURIComponent(b.dataset.favorite);progress.favorites[key]=!progress.favorites[key];save();render();toastMsg(progress.favorites[key]?'Disimpan ke favorit':'Dihapus dari favorit');});
   document.querySelectorAll('[data-oneflash]').forEach(b=>b.onclick=()=>{const key=decodeURIComponent(b.dataset.oneflash);const found=vocab.find(v=>wordKey(v)===key);if(found){state.chapter=found.bab;state.flashPool=[found];state.flashIndex=0;state.flashShow=false;show('flashcards');}});
   document.querySelectorAll('[data-review-flash]').forEach(b=>b.onclick=()=>{const key=decodeURIComponent(b.dataset.reviewFlash);const found=vocab.find(v=>wordKey(v)===key);if(found){state.chapter=found.bab;state.flashPool=[found];state.flashIndex=0;state.flashShow=false;show('flashcards');}});
