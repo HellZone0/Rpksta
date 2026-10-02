@@ -137,3 +137,157 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,[t
   .modal-card{padding:26px 20px}.toast{bottom:92px;max-width:calc(100vw - 28px);width:max-content}
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn,.toast,.flash-inner{transition:none!important}.flash-inner{transform:none!important}.flash-scene.flipped .flash-inner{transform:none!important}.flash-back{display:none}.flash-scene.flipped .flash-front{display:none}.flash-scene.flipped .flash-back{display:grid}}
+
+/* ==========================================================
+   COSMIC POLISH V8
+   Flat design retained: solid surfaces, borders, no blur/glow.
+   ========================================================== */
+:root{
+  --bg:#F7F5FA;
+  --surface:#FFFFFF;
+  --surface-2:#F0ECF7;
+  --surface-3:#E8F3F2;
+  --ink:#171522;
+  --muted:#716B80;
+  --line:#DDD8E7;
+  --line-strong:#C8C0D8;
+  --blue:#6656D9;
+  --blue-dark:#5141C7;
+  --blue-soft:#EAE6FF;
+  --green:#168C79;
+  --green-soft:#E2F4F0;
+  --red:#C9475A;
+  --red-soft:#FBE8EC;
+  --yellow:#9A6A12;
+  --yellow-soft:#FFF1D2;
+  --cosmic-purple:#26223A;
+  --cosmic-purple-2:#342D4F;
+  --cosmic-cyan:#62D6D0;
+  --cosmic-pink:#DFA1D9;
+}
+[data-theme="dark"]{
+  --bg:#0D0B15;
+  --surface:#171422;
+  --surface-2:#211D31;
+  --surface-3:#182B2B;
+  --ink:#F7F4FB;
+  --muted:#A8A1B8;
+  --line:#342F46;
+  --line-strong:#49425E;
+  --blue:#A99AF7;
+  --blue-dark:#C0B5FF;
+  --blue-soft:#2A2541;
+  --green:#69D4BF;
+  --green-soft:#173934;
+  --red:#F18A9A;
+  --red-soft:#40222B;
+  --yellow:#F0C96B;
+  --yellow-soft:#3B301A;
+  --cosmic-purple:#26223A;
+  --cosmic-purple-2:#342D4F;
+  --cosmic-cyan:#62D6D0;
+  --cosmic-pink:#DFA1D9;
+}
+
+/* Stronger cosmic identity without leaving flat design. */
+body{background:var(--bg)}
+.brand-mark,.creator-mark{background:var(--cosmic-purple-2);color:var(--cosmic-cyan);border:1px solid #4B4265}
+.nav button.active,.bottom-nav button.active{background:var(--blue-soft);color:var(--blue-dark)}
+.nav button:hover:not(.active){background:var(--surface-2)}
+.icon-btn{border-color:var(--line);color:var(--blue-dark)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#15111F}
+.btn.primary:hover:not(:disabled){background:var(--blue-dark);border-color:var(--blue-dark);color:#15111F}
+.btn:hover:not(:disabled){background:var(--cosmic-purple);border-color:var(--cosmic-purple);color:#fff}
+.eyebrow,.cat,.chapter-num{color:var(--blue-dark)}
+
+/* 01 — Progress bars: never disappear into the card background. */
+.progress{background:#C8C1D6;border:1px solid rgba(23,21,34,.08)}
+.progress span{background:var(--blue)}
+[data-theme="dark"] .progress{background:#443D54;border-color:#514965}
+.hero-card .progress{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.30)}
+.hero-card .progress span{background:var(--cosmic-cyan)}
+
+/* 02 — Hero / large surfaces use cosmic blocks, not generic blue. */
+.hero-card{background:var(--cosmic-purple);border-color:#49405F;border-left:5px solid var(--cosmic-cyan);color:#F8F6FB}
+.hero-card .source-note{color:#BEB6CE}
+.hero-card hr{border-top-color:#4B445B}
+.hero-card strong{color:#fff}
+.level-card{background:var(--surface-2);border:1px solid var(--line)}
+.level-ring{border-color:var(--cosmic-cyan)}
+
+/* 03 — Feature cards get subtle editorial color blocking. */
+.feature-card{position:relative;overflow:hidden;background:var(--surface);border-color:var(--line);min-height:220px;padding:26px}
+.feature-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--blue)}
+.feature-card:nth-child(3n+1)::before{background:var(--cosmic-cyan)}
+.feature-card:nth-child(3n+2)::before{background:var(--cosmic-pink)}
+.feature-card:nth-child(3n+3)::before{background:var(--blue)}
+.feature-card:nth-child(3n+1),.feature-card:nth-child(3n+2){background:var(--surface)}
+.feature-icon{display:inline-flex;width:max-content;padding:5px 8px;border:1px solid var(--line);background:var(--surface-2);border-radius:7px;color:var(--blue-dark)}
+.feature-card h3{letter-spacing:-.035em}
+
+/* 04 — Stats: separate blocks instead of a dense joined table. */
+.stats-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;background:transparent;border:0;margin-top:28px}
+.stat{min-height:132px;padding:22px;border:1px solid var(--line);border-radius:16px;background:var(--surface);}
+.stat strong{font-size:36px}
+
+/* 05 — Quiz choices: softer cosmic surface and clear states. */
+.quiz-card{background:var(--surface);border:1px solid var(--line);border-radius:20px}
+.quiz-progress{background:#39334A;height:7px;border:1px solid #4B445C}
+.quiz-progress span{background:var(--cosmic-cyan)}
+.quiz-question{color:var(--ink)}
+.choices{gap:14px;margin-top:30px}
+.choice{background:#24212E;border:1px solid #413A50;color:#F4F1F8;min-height:72px;border-radius:14px;padding:17px 19px}
+.choice:hover:not(:disabled){background:#2D2840;border-color:var(--blue);color:#fff}
+.choice.selected{background:#30294A;border-color:var(--blue);color:#EAE5FF}
+.choice.tried{background:var(--red-soft);border-color:var(--red);color:var(--red)}
+.answer-main-btn{background:var(--blue)!important;color:#15111F!important}
+
+/* 06 — Flashcard: clearer front/back separation. */
+.flash-face{border-radius:20px;border-color:var(--line)}
+.flash-front{background:var(--surface)}
+.flash-back{background:var(--cosmic-purple);border-color:#4B4265}
+.audio-btn{border-color:var(--blue);color:var(--blue-dark)}
+.flash-back .audio-btn{border-color:var(--cosmic-cyan);color:var(--cosmic-cyan)}
+
+/* 07 — Chapter/vocabulary blocks get a little more visual rhythm. */
+.chapter-card{border-radius:16px}
+.chapter-icon{background:var(--surface-2);color:var(--blue-dark);border:1px solid var(--line)}
+.vocab-list{border-radius:16px}
+.vocab-item{padding:21px 22px}
+.round-btn{background:var(--surface-2)}
+
+/* 08 — Achievement / focus spacing. */
+.achievement-grid{gap:16px}
+.achievement{border-radius:14px;padding:17px;background:var(--surface);border-color:var(--line)}
+.achievement-icon{background:var(--surface-2);border:1px solid var(--line)}
+.achievement.earned .achievement-icon{background:var(--blue-soft);color:var(--blue-dark);border-color:#4B4265}
+.stats-main{gap:22px}
+.chapter-stats{border-radius:16px;border:1px solid var(--line)}
+.chapter-stat-row{padding:20px 22px}
+
+/* 09 — Navigation gets cosmic accents without becoming glassy. */
+.topbar{background:var(--surface);border-right-color:var(--line)}
+.bottom-nav{background:var(--surface);border-top-color:var(--line)}
+.bottom-nav button.active{border:1px solid #49405F}
+
+/* 10 — Modal/toast are solid, readable, and never empty-looking. */
+.modal-overlay{background:rgba(13,11,21,.78)}
+.modal-card{background:var(--surface);border-color:var(--line)}
+.quiz-feedback-icon{background:var(--blue-soft);color:var(--blue-dark);border:1px solid #4B4265}
+.toast{background:var(--cosmic-purple);border:1px solid #4B4265;color:#fff}
+
+@media (max-width:680px){
+  .container{width:min(calc(100% - 28px),var(--content));padding-bottom:118px}
+  .hero-card{padding:24px 22px}
+  .dashboard-stats{gap:0;margin-bottom:24px}
+  .mini-stat{padding:22px 16px}
+  .stats-grid{gap:12px}
+  .stat{min-height:128px;padding:18px}
+  .stat strong{font-size:32px}
+  .feature-card{min-height:205px;padding:24px}
+  .choices{gap:12px;margin-top:26px}
+  .choice{min-height:64px;padding:16px;border-radius:13px}
+  .achievement-grid{gap:14px}
+  .achievement{padding:16px}
+  .chapter-stat-row{padding:18px 16px;gap:14px}
+}
