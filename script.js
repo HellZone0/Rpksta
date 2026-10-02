@@ -1,3 +1,4 @@
+// Feature Pack 10: Learning Suite expansion (spaced review, daily challenge, listening controls, mastery analytics).
 // Feature Pack 06: merged from Feature Pack 03 (light UI + global search/chapter labels), Feature Pack 04 (quiz feedback), and Feature Pack 05 (learning suite/audio).
 // Feature Pack 03 — auto-next, global search, chapter labels, lightweight UI
 let chapters = [];
@@ -16,17 +17,19 @@ const state = {
 const STORE = 'epsTopikProgress';
 const SETTINGS = 'epsTopikSettings';
 const CREATOR_SEEN = 'epsTopikCreatorSeen';
-const DATA_VERSION = '20261002-feature-pack-06';
+const DATA_VERSION = '20261002-feature-pack-10';
+let examTimerInterval = null;
+let examTimerQuestion = null;
 
 const defaultProgress = {
   correct: 0, wrong: 0, answered: 0, xp: 0, streak: 0, lastDate: '',
   seen: {}, wrongByWord: {}, rightByWord: {}, mastered: {}, favorites: {},
-  achievements: {}, quizHistory: []
+  achievements: {}, quizHistory: [], studyDays: {}, listening: 0, reviewDue: {}, dailyChallenges: {}
 };
 
 function readJSON(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
-  catch (e) { localStorage.removeItem(key); return structuredClone ? structuredClone(fallback) : fallback; }
+  catch (e) { localStorage.removeItem(key); return typeof structuredClone === 'function' ? structuredClone(fallback) : JSON.parse(JSON.stringify(fallback)); }
 }
 
 let progress = readJSON(STORE, defaultProgress);
@@ -40,7 +43,9 @@ progress.achievements ||= {};
 progress.quizHistory ||= [];
 progress.studyDays ||= {};
 progress.listening ||= 0;
-let settings = readJSON(SETTINGS, { theme: 'dark' });
+let settings = readJSON(SETTINGS, { theme: 'dark', speechRate: .80, listeningPause: 650 });
+settings.speechRate = Number(settings.speechRate) || .80;
+settings.listeningPause = Number(settings.listeningPause) || 650;
 
 document.documentElement.dataset.theme = settings.theme === 'dark' ? 'dark' : 'light';
 
@@ -93,7 +98,8 @@ function openQuizCorrectFeedback({answer=''}) {
     answerBox.innerHTML = '';
   }
   action.disabled = true;
-  action.textContent = 'Berikutnya otomatis…';
+  action.classList.add('hidden');
+  action.textContent = '';
   action.onclick = null;
   const feedbackCard = quizFeedbackModal.querySelector('.quiz-feedback-card');
   feedbackCard?.classList.remove('pop-in');
@@ -122,6 +128,7 @@ function openQuizFeedback({secondChance=false, answer='', onAction}) {
     answerBox.innerHTML = '';
   }
   action.disabled = false;
+  action.classList.remove('hidden');
   action.textContent = secondChance ? 'Soal Berikutnya →' : 'Coba Lagi';
   action.onclick = () => { closeQuizFeedback(); onAction?.(); };
   const feedbackCard = quizFeedbackModal.querySelector('.quiz-feedback-card');
@@ -148,18 +155,67 @@ function wordStats(v) {
   const key = wordKey(v);
   return { wrong: progress.wrongByWord[key] || 0, right: progress.rightByWord[key] || 0, seen: !!progress.seen[key], mastered: !!progress.mastered[key], favorite: !!progress.favorites[key] };
 }
+let speechRunId = 0;
 function speakKorean(text) {
   if (!('speechSynthesis' in window)) { toastMsg('Browser ini belum mendukung audio Korea.'); return; }
+  const runId = ++speechRunId;
   speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'ko-KR'; u.rate = .82; u.pitch = 1;
-  speechSynthesis.speak(u);
+
+  // A slash in the source vocabulary means the Korean alternatives should be
+  // pronounced separately. Speaking them as one utterance can make the
+  // second word start before the first one has finished on some browsers.
+  const parts = String(text)
+    .split('/')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  const speakPart = (index) => {
+    if (runId !== speechRunId || index >= parts.length) return;
+    const u = new SpeechSynthesisUtterance(parts[index]);
+    u.lang = 'ko-KR';
+    u.rate = settings.speechRate;
+    u.pitch = 1;
+    u.onend = () => {
+      if (runId !== speechRunId) return;
+      if (index + 1 < parts.length) {
+        // Deliberate pause for entries such as "무엇/뭐" or "누나/언니".
+        setTimeout(() => speakPart(index + 1), settings.listeningPause);
+      }
+    };
+    u.onerror = () => {
+      if (runId !== speechRunId) return;
+      if (index + 1 < parts.length) setTimeout(() => speakPart(index + 1), settings.listeningPause);
+    };
+    speechSynthesis.speak(u);
+  };
+
+  speakPart(0);
 }
+function todayKey(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function markReviewSchedule(v, wasCorrect, attempts=1){
+  const key=wordKey(v), now=Date.now();
+  let days = wasCorrect ? (attempts===1 ? 3 : 1) : 0;
+  if((progress.wrongByWord[key]||0)>=2) days=0;
+  progress.reviewDue[key] = now + days*86400000;
+}
+function dueReviewPool(base=vocab){
+  const now=Date.now();
+  return base.filter(v => progress.reviewDue[wordKey(v)] && progress.reviewDue[wordKey(v)] <= now);
+}
+function dailySeededPool(base=vocab, date=todayKey()){
+  const arr=base.slice(); let seed=0;
+  for(const ch of date) seed=(seed*31+ch.charCodeAt(0))>>>0;
+  const rand=()=>{ seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; };
+  for(let i=arr.length-1;i>0;i--){ const j=Math.floor(rand()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr;
+}
+function dailyChallengeDone(){ return !!progress.dailyChallenges[todayKey()]; }
+function markDailyChallengeDone(){ progress.dailyChallenges[todayKey()]={done:true,date:new Date().toISOString()}; }
 function filteredBase() {
   return state.source === 'Semua' ? vocab : vocab.filter(v => v.sumber === state.source);
 }
 function difficultPool(base=vocab) { return base.filter(v => mastery(v)==='salah' || (progress.wrongByWord[wordKey(v)]||0) >= 1); }
-function recordStudyDay(){ const d=new Date().toISOString().slice(0,10); progress.studyDays[d]=true; updateStreak(); }
+function recordStudyDay(){ const d=todayKey(); progress.studyDays[d]=true; updateStreak(); }
 function mastery(v) {
   const s = wordStats(v);
   if (s.mastered || (s.right >= 2 && s.wrong === 0)) return 'dikuasai';
@@ -173,10 +229,10 @@ function masteryLabel(v) {
 function masteryClass(v) { return `mastery-${mastery(v)}`; }
 
 function updateStreak() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayKey();
   if (progress.lastDate === today) return false;
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-  const y = yesterday.toISOString().slice(0, 10);
+  const y = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
   progress.streak = progress.lastDate === y ? (progress.streak || 0) + 1 : 1;
   progress.lastDate = today;
   return true;
@@ -239,7 +295,30 @@ function show(view, opts = {}) {
   render();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+function stopExamTimer() {
+  if (examTimerInterval) { clearInterval(examTimerInterval); examTimerInterval = null; }
+  examTimerQuestion = null;
+}
+function startExamTimer(q) {
+  stopExamTimer();
+  if (!q || q.mode !== 'exam' || !q.timerEnd || q.i >= q.pool.length) return;
+  examTimerQuestion = q;
+  const update = () => {
+    if (state.quiz !== q || q.mode !== 'exam') { stopExamTimer(); return; }
+    const left = Math.max(0, Math.ceil((q.timerEnd - Date.now()) / 1000));
+    const timerEl = document.querySelector('.exam-timer');
+    if (timerEl) timerEl.textContent = `⏱ ${left} dtk`;
+    if (left <= 0) {
+      stopExamTimer();
+      q.i = q.pool.length;
+      render();
+    }
+  };
+  update();
+  examTimerInterval = setInterval(update, 250);
+}
 function render() {
+  stopExamTimer();
   updateActiveNav();
   if (state.view === 'home') return home();
   if (state.view === 'chapters') return chapterList();
@@ -260,7 +339,7 @@ function home() {
   <div class="dashboard-stats"><div class="mini-stat"><span class="muted">Total kosakata</span><strong>${total.toLocaleString('id-ID')}</strong></div><div class="mini-stat"><span class="muted">Akurasi</span><strong>${accuracy()}%</strong></div><div class="mini-stat"><span class="muted">Streak</span><strong>🔥 ${progress.streak || 0}</strong></div></div>
   <div class="card level-card"><div><span class="eyebrow">LEVEL BELAJAR</span><h2>Level ${level.level} · ${esc(level.name)}</h2><p class="muted">${progress.xp || 0} XP total · ${Math.max(0, level.next-(progress.xp||0))} XP menuju level berikutnya</p></div><div class="level-ring"><strong>${level.level}</strong><span>LEVEL</span></div><div class="level-progress"><div class="progress"><span style="width:${level.pct}%"></span></div><small>${level.pct}% ke level berikutnya</small></div></div>
   <div class="section-head"><div><h2>Bab tersedia</h2><p class="muted">Mulai dari Bab 1 atau pilih bab tertentu.</p></div><button class="btn" data-action="chapters">Lihat semua</button></div><div class="grid">${chapters.slice(0,6).map(chapterCard).join('')}</div>
-  <div class="section-head"><div><h2>Fokus belajar</h2><p class="muted">Kata yang belum dikuasai dan sering salah akan lebih mudah ditemukan.</p></div></div><div class="grid"><div class="card feature-card"><div class="feature-icon">🎯</div><h3>Simulasi Ujian</h3><p class="muted">Mode ujian tanpa feedback langsung.</p><button class="btn" data-action="quiz" data-mode="exam">Mulai Simulasi</button></div><div class="card feature-card"><div class="feature-icon">🔴</div><h3>Kosakata Sulit</h3><p class="muted">Latih kembali kata yang sering salah.</p><button class="btn" data-action="vocab" data-status="salah">Latihan Kata Sulit</button></div><div class="card feature-card"><div class="feature-icon">🃏</div><h3>Kartu Belajar</h3><p class="muted">Balik kartu dengan animasi dan tandai “Saya tahu”.</p><button class="btn" data-action="flashcards">Buka Kartu</button></div><div class="card feature-card"><div class="feature-icon">🔊</div><h3>Listening Korea</h3><p class="muted">Dengarkan pelafalan Korea lalu pilih arti yang benar.</p><button class="btn" data-action="quiz" data-mode="listening">Mulai Listening</button></div><div class="card feature-card"><div class="feature-icon">🏆</div><h3>Pencapaian</h3><p class="muted">${earnedAchievements().length} / ${achievementDefs.length} pencapaian terbuka.</p><button class="btn" data-action="stats">Lihat Statistik</button></div></div>`;
+  <div class="section-head"><div><h2>Tantangan Hari Ini</h2><p class="muted">10 soal pilihan harian + review terjadwal. ${dailyChallengeDone()?'✅ Sudah selesai hari ini.':'🎯 Belum selesai.'}</p></div></div><div class="grid"><div class="card feature-card daily-card"><div class="feature-icon">🌟</div><h3>Daily Challenge</h3><p class="muted">10 soal yang berubah setiap hari. Selesaikan untuk mendapatkan bonus XP.</p><button class="btn primary" data-action="quiz" data-mode="daily">${dailyChallengeDone()?'Ulangi Tantangan':'Mulai Tantangan'} →</button></div><div class="card feature-card"><div class="feature-icon">🧠</div><h3>Review Terjadwal</h3><p class="muted">Kosakata yang waktunya sudah tiba akan muncul kembali secara otomatis.</p><button class="btn" data-action="quiz" data-mode="spaced">Review Sekarang</button></div></div><div class="section-head"><div><h2>Fokus belajar</h2><p class="muted">Kata yang belum dikuasai dan sering salah akan lebih mudah ditemukan.</p></div></div><div class="grid"><div class="card feature-card"><div class="feature-icon">🎯</div><h3>Simulasi Ujian</h3><p class="muted">Mode ujian tanpa feedback langsung.</p><button class="btn" data-action="quiz" data-mode="exam">Mulai Simulasi</button></div><div class="card feature-card"><div class="feature-icon">🔴</div><h3>Kosakata Sulit</h3><p class="muted">Latih kembali kata yang sering salah.</p><button class="btn" data-action="vocab" data-status="salah">Latihan Kata Sulit</button></div><div class="card feature-card"><div class="feature-icon">🃏</div><h3>Kartu Belajar</h3><p class="muted">Balik kartu dengan animasi dan tandai “Saya tahu”.</p><button class="btn" data-action="flashcards">Buka Kartu</button></div><div class="card feature-card"><div class="feature-icon">🔊</div><h3>Listening Korea</h3><p class="muted">Dengarkan pelafalan Korea lalu pilih arti yang benar.</p><button class="btn" data-action="quiz" data-mode="listening">Mulai Listening</button></div><div class="card feature-card"><div class="feature-icon">🏆</div><h3>Pencapaian</h3><p class="muted">${earnedAchievements().length} / ${achievementDefs.length} pencapaian terbuka.</p><button class="btn" data-action="stats">Lihat Statistik</button></div></div>`;
   bindActions(); updateActiveNav();
 }
 
@@ -346,29 +425,31 @@ function quizView() {
   if (!state.quiz) {
     const mode = state.pendingQuizMode || 'campuran';
     state.pendingQuizMode = null;
-    app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card quiz-card-enter"><div class="eyebrow">LATIHAN SOAL</div><h1>Uji kosakata.</h1><p class="muted">Pilih mode belajar, lalu mulai. Mode belajar memberi feedback; simulasi ujian menampilkan hasil di akhir.</p><div class="two-col"><label>Bab<select id="qchap" class="select" style="width:100%"><option value="">Semua Bab</option>${chapters.map(c=>`<option value="${c.bab}" ${state.chapter===c.bab?'selected':''}>Bab ${c.bab} — ${esc(c.korea)}</option>`).join('')}</select></label><label>Jumlah soal<select id="qcount" class="select" style="width:100%"><option>10</option><option>20</option><option>30</option><option>50</option><option>100</option><option>Semua</option></select></label></div><label class="mode-label">Mode<select id="qmode" class="select" style="width:100%"><option value="campuran" ${mode==='campuran'?'selected':''}>Campuran</option><option value="listening" ${mode==='listening'?'selected':''}>🔊 Listening Korea</option><option value="hard" ${mode==='hard'?'selected':''}>🔴 Kosakata Sulit</option><option value="review" ${mode==='review'?'selected':''}>📝 Review Jawaban Salah</option><option value="exam" ${mode==='exam'?'selected':''}>🎯 Simulasi Ujian</option></select></label><div class="notice">Listening menggunakan suara Korea dari Speech Synthesis browser. Simulasi ujian tidak memberi tahu benar/salah sampai selesai.</div><div class="actions"><button class="btn primary" id="startQ">Mulai Latihan →</button></div></div></div>`;
+    app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card quiz-card-enter"><div class="eyebrow">LATIHAN SOAL</div><h1>Uji kosakata.</h1><p class="muted">Pilih mode belajar, lalu mulai. Mode belajar memberi feedback; simulasi ujian menampilkan hasil di akhir.</p><div class="two-col"><label>Bab<select id="qchap" class="select" style="width:100%"><option value="">Semua Bab</option>${chapters.map(c=>`<option value="${c.bab}" ${state.chapter===c.bab?'selected':''}>Bab ${c.bab} — ${esc(c.korea)}</option>`).join('')}</select></label><label>Jumlah soal<select id="qcount" class="select" style="width:100%"><option>10</option><option>20</option><option>30</option><option>50</option><option>100</option><option>Semua</option></select></label></div><label class="mode-label">Mode<select id="qmode" class="select" style="width:100%"><option value="campuran" ${mode==='campuran'?'selected':''}>Campuran</option><option value="listening" ${mode==='listening'?'selected':''}>🔊 Listening Korea</option><option value="hard" ${mode==='hard'?'selected':''}>🔴 Kosakata Sulit</option><option value="review" ${mode==='review'?'selected':''}>📝 Review Jawaban Salah</option><option value="spaced" ${mode==='spaced'?'selected':''}>🧠 Review Terjadwal</option><option value="daily" ${mode==='daily'?'selected':''}>🌟 Daily Challenge</option><option value="exam" ${mode==='exam'?'selected':''}>🎯 Simulasi Ujian</option></select></label><div class="notice">Listening menggunakan suara Korea dari Speech Synthesis browser. Kecepatan: <strong>${settings.speechRate.toFixed(2)}×</strong>. Simulasi ujian tidak memberi tahu benar/salah sampai selesai.</div><div class="actions"><button class="btn primary" id="startQ">Mulai Latihan →</button></div></div></div>`;
     document.getElementById('startQ').onclick=()=>{
-      state.chapter=Number(document.getElementById('qchap').value)||null; const poolBase=(state.chapter?itemsFor(state.chapter):vocab); const modeNow=document.getElementById('qmode').value; let pool=poolBase.slice();
+      state.chapter=Number(document.getElementById('qchap').value)||null; const modeNow=document.getElementById('qmode').value; const poolBase=(modeNow==='daily'?vocab:(state.chapter?itemsFor(state.chapter):vocab)); let pool=poolBase.slice();
       if(modeNow==='hard') pool=difficultPool(pool);
       if(modeNow==='review') pool=pool.filter(v=>(progress.wrongByWord[wordKey(v)]||0)>0);
+      if(modeNow==='spaced') pool=dueReviewPool(pool);
+      if(modeNow==='daily') pool=dailySeededPool(pool, todayKey());
       if(!pool.length){toastMsg('Belum ada kosakata untuk mode ini.');return;}
-      pool.sort(()=>Math.random()-.5); const selected=document.getElementById('qcount').value; const requested=selected==='Semua'?pool.length:Number(selected); const exam=modeNow==='exam'; state.quiz=makeQuizState(pool,Math.min(requested,pool.length),modeNow); state.quiz.timer=exam?1200:0; recordStudyDay(); save(); render(); if(modeNow==='listening') setTimeout(()=>speakKorean(state.quiz.pool[state.quiz.i].korea),300);
+      if(modeNow!=='daily') pool.sort(()=>Math.random()-.5); const selected=document.getElementById('qcount').value; const requested=modeNow==='daily'?Math.min(10,pool.length):(selected==='Semua'?pool.length:Number(selected)); const exam=modeNow==='exam'; state.quiz=makeQuizState(pool,Math.min(requested,pool.length),modeNow); state.quiz.timer=exam?1200:0; recordStudyDay(); save(); render(); if(modeNow==='listening') setTimeout(()=>speakKorean(state.quiz.pool[state.quiz.i].korea),300);
     }; updateActiveNav(); return;
   }
   const q=state.quiz;
   if(q.i>=q.pool.length) return quizResult();
   if(q.mode==='exam' && q.timerEnd && Date.now()>=q.timerEnd){ q.i=q.pool.length; return quizResult(); }
-  if(q.mode==='exam' && q.timerEnd) setTimeout(()=>{if(state.quiz===q)render();},1000);
   const v=q.pool[q.i];
   if(!q.choices) q.choices=makeChoices(v,q.pool);
   const choices=q.choices, attempts=q.attempts||0, selected=q.selected||null, feedback=q.feedback;
   const canAnswer=!!selected&&!q.pendingNext&&!q.locked;
   const actionLabel=q.pendingNext?'Soal Berikutnya →':'Jawab';
   const pct=Math.round((q.i/q.pool.length)*100);
-  if(q.mode==='exam' && !q.timerStarted){q.timerStarted=Date.now();q.timerEnd=q.timerStarted+(q.timer||60)*1000;}
+  if(q.mode==='exam' && !q.timerStarted){q.timerStarted=Date.now();q.timerEnd=q.timerStarted+(q.timer||1200)*1000;}
   const examLeft=q.mode==='exam'?Math.max(0,Math.ceil((q.timerEnd-Date.now())/1000)):0;
   const questionText=q.mode==='listening'?'🔊 Dengarkan audio Korea, lalu pilih artinya.':esc(v.korea);
-  app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card quiz-card-enter ${q.feedback?.type==='correct'?'quiz-correct':''}"><div class="quiz-meta"><span>Soal ${q.i+1}/${q.pool.length}</span><span>${q.mode==='exam'?`⏱ ${examLeft} dtk · `:''}${q.mode==='exam'?'Ujian · ':' '}Kesempatan: <strong>${Math.max(0,2-attempts)}</strong> dari 2</span></div><div class="quiz-progress"><span style="width:${pct}%"></span></div><div class="quiz-question">${questionText}${q.mode==='listening'?`<button class="btn audio-btn" id="speakQ">🔊 Putar Lagi</button>`:''}</div><div class="choices">${choices.map((c,i)=>{const isSelected=selected===c.arti;const tried=q.tried?.includes(c.arti);const cls=`choice ${isSelected?'selected':''} ${tried?'tried':''}`;return `<button class="${cls}" style="--choice-i:${i}" data-answer="${encodeURIComponent(c.arti)}" ${tried||q.pendingNext?'disabled':''} aria-pressed="${isSelected?'true':'false'}">${esc(c.arti)}</button>`;}).join('')}</div><div class="actions quiz-actions"><button class="btn" id="quitQ">Keluar</button><button class="btn primary answer-main-btn" id="answerQ" ${canAnswer||q.pendingNext?'':'disabled'}>${actionLabel}</button></div></div></div>`;
+  app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card quiz-card-enter ${q.feedback?.type==='correct'?'quiz-correct':''} ${q.mode==='exam'?'exam-mode':''}"><div class="quiz-meta"><span>Soal ${q.i+1}/${q.pool.length}</span><span>${q.mode==='exam'?`<span class="exam-timer">⏱ ${examLeft} dtk</span> · `:''}${q.mode==='exam'?'Ujian · Tanpa kesempatan kedua':'Kesempatan: <strong>'+Math.max(0,2-attempts)+'</strong> dari 2'}</span></div><div class="quiz-progress"><span style="width:${pct}%"></span></div><div class="quiz-question">${questionText}${q.mode==='listening'?`<button class="btn audio-btn" id="speakQ">🔊 Putar Lagi</button>`:''}</div><div class="choices">${choices.map((c,i)=>{const isSelected=selected===c.arti;const tried=q.tried?.includes(c.arti);const cls=`choice ${isSelected?'selected':''} ${tried?'tried':''}`;return `<button class="${cls}" style="--choice-i:${i}" data-answer="${encodeURIComponent(c.arti)}" ${tried||q.pendingNext?'disabled':''} aria-pressed="${isSelected?'true':'false'}">${esc(c.arti)}</button>`;}).join('')}</div><div class="actions quiz-actions"><button class="btn" id="quitQ">Keluar</button><button class="btn primary answer-main-btn" id="answerQ" ${canAnswer||q.pendingNext?'':'disabled'}>${actionLabel}</button></div></div></div>`;
+  if(q.mode==='exam') startExamTimer(q);
   if(q.mode==='listening'){ document.getElementById('speakQ')?.addEventListener('click',()=>speakKorean(v.korea)); setTimeout(()=>{if(state.quiz===q && !quizFeedbackModal?.classList.contains('hidden')) return;speakKorean(v.korea);},250); }
   document.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>{
     if(q.locked||q.pendingNext)return;
@@ -389,15 +470,16 @@ function quizView() {
     const answer=q.selected, correct=answer===v.arti, key=wordKey(v);
     if(correct){
       q.score++; progress.correct=(progress.correct||0)+1; progress.answered=(progress.answered||0)+1; progress.seen[key]=true; progress.rightByWord[key]=(progress.rightByWord[key]||0)+1;
+      markReviewSchedule(v,true,(q.attempts||0)+1);
       if(q.attempts>0) q.review.push({ ...v, correct:true, answer:q.tried?.[0] || answer });
       if(progress.rightByWord[key]>=2 && (progress.wrongByWord[key]||0)===0) progress.mastered[key]=true;
       if(q.mode==='exam'){ q.pendingNext=true; q.locked=false; q.feedback=null; save(); setTimeout(()=>{if(state.quiz===q){q.i++;q.attempts=0;q.tried=[];q.choices=null;q.selected=null;q.pendingNext=false;render();}},80); return; }
       awardXp(10); updateStreak(); q.pendingNext=true; q.locked=false; q.feedback={type:'correct',title:'Jawaban Benar!',message:'+10 XP · Jawaban kamu tepat.'}; save(); checkAchievements(); render();
       requestAnimationFrame(()=>openQuizCorrectFeedback({answer:v.arti}));
-      setTimeout(()=>{ if(state.quiz===q && q.pendingNext){ q.i++; q.attempts=0; q.tried=[]; q.choices=null; q.selected=null; q.pendingNext=false; q.feedback=null; q.locked=false; render(); } }, 1100); return;
+      setTimeout(()=>{ if(state.quiz===q && q.pendingNext){ closeQuizFeedback(); q.i++; q.attempts=0; q.tried=[]; q.choices=null; q.selected=null; q.pendingNext=false; q.feedback=null; q.locked=false; render(); } }, 1100); return;
     }
-    q.attempts=(q.attempts||0)+1; q.wrong=(q.wrong||0)+1; progress.wrong=(progress.wrong||0)+1; progress.wrongByWord[key]=(progress.wrongByWord[key]||0)+1; delete progress.mastered[key]; q.tried=q.tried||[]; if(!q.tried.includes(answer))q.tried.push(answer); q.selected=null;
-    if(q.mode==='exam'){ progress.answered=(progress.answered||0)+1; progress.seen[key]=true; q.pendingNext=true; q.locked=false; save(); setTimeout(()=>{if(state.quiz===q){q.i++;q.attempts=0;q.tried=[];q.choices=null;q.selected=null;q.pendingNext=false;render();}},80); return; }
+    q.attempts=(q.attempts||0)+1; q.wrong=(q.wrong||0)+1; progress.wrong=(progress.wrong||0)+1; progress.wrongByWord[key]=(progress.wrongByWord[key]||0)+1; markReviewSchedule(v,false,(q.attempts||0)+1); delete progress.mastered[key]; q.tried=q.tried||[]; if(!q.tried.includes(answer))q.tried.push(answer); q.selected=null;
+    if(q.mode==='exam'){ progress.answered=(progress.answered||0)+1; progress.seen[key]=true; q.review.push({ ...v, correct:false, answer }); q.pendingNext=true; q.locked=false; save(); setTimeout(()=>{if(state.quiz===q){q.i++;q.attempts=0;q.tried=[];q.choices=null;q.selected=null;q.pendingNext=false;render();}},80); return; }
     if(q.attempts<2){
       q.locked=false;
       q.feedback={type:'wrong',title:'Jawaban salah.',message:'Kesempatan tersisa 1. Pilih jawaban lain lalu tekan Jawab.'};
@@ -427,14 +509,17 @@ function quizView() {
 }
 
 function quizResult() {
+  stopExamTimer();
   const q=state.quiz, total=q.pool.length, pct=total?Math.round(q.score/total*100):0;
   const review=q.review||[];
-  progress.quizHistory.unshift({date:new Date().toISOString(),score:q.score,total,pct,wrong:q.wrong||0}); progress.quizHistory=progress.quizHistory.slice(0,20);
+  progress.quizHistory.unshift({date:new Date().toISOString(),score:q.score,total,pct,wrong:q.wrong||0,mode:q.mode}); progress.quizHistory=progress.quizHistory.slice(0,50);
+  if(q.mode==='listening') progress.listening=(progress.listening||0)+1;
+  if(q.mode==='daily' && total>=1 && !dailyChallengeDone()) { markDailyChallengeDone(); awardXp(50); }
   const newly=checkAchievements(pct); save();
   state.review=review;
   app.innerHTML=`<div class="quiz-wrap"><div class="card quiz-card result-card"><div class="cat">HASIL LATIHAN</div><div class="result-score">${pct}%</div><p class="muted">${q.score} benar dari ${total} soal · ${q.wrong||0} percobaan salah.</p><div class="progress"><span style="width:${pct}%"></span></div>${newly.length?`<div class="achievement-toast">🏆 Pencapaian baru terbuka: ${newly.length}</div>`:''}<div class="result-actions"><button class="btn primary" id="reviewBtn">🔎 Tinjau Jawaban${review.length?` (${review.length})`:''}</button><button class="btn" id="again">Coba Lagi</button><button class="btn" id="homeAfter">Ke Beranda</button></div></div>${reviewSection(review)}</div>`;
   document.getElementById('reviewBtn').onclick=()=>document.getElementById('reviewList')?.scrollIntoView({behavior:'smooth'});
-  document.getElementById('again').onclick=()=>{const count=q.questionCount||q.pool.length;const ch=state.chapter||null;const pool=(ch?itemsFor(ch):vocab).slice().sort(()=>Math.random()-.5);state.quiz=makeQuizState(pool,Math.min(count,pool.length));render();};
+  document.getElementById('again').onclick=()=>{const count=q.questionCount||q.pool.length;const pool=q.pool.slice().sort(()=>Math.random()-.5);state.quiz=makeQuizState(pool,Math.min(count,pool.length),q.mode);state.quiz.timer=q.mode==='exam'?1200:0;render();if(q.mode==='listening')setTimeout(()=>{if(state.quiz) speakKorean(state.quiz.pool[state.quiz.i].korea);},300);};
   document.getElementById('homeAfter').onclick=()=>{state.quiz=null;show('home');};
 }
 function reviewSection(review) {
@@ -445,15 +530,19 @@ function reviewSection(review) {
 function statsView() {
   const total=vocab.length, seen=Object.keys(progress.seen||{}).length, pct=total?Math.min(100,Math.round(seen/total*100)):0;
   const level=levelInfo(progress.xp||0), earned=earnedAchievements();
-  const chapterRows=chapters.map(c=>{const items=itemsFor(c.bab), s=items.filter(v=>progress.seen[wordKey(v)]).length, accItems=items.filter(v=>progress.rightByWord[wordKey(v)]||progress.wrongByWord[wordKey(v)]);const right=accItems.reduce((a,v)=>a+(progress.rightByWord[wordKey(v)]||0),0),wrong=accItems.reduce((a,v)=>a+(progress.wrongByWord[wordKey(v)]||0),0),acc=right+wrong?Math.round(right/(right+wrong)*100):0;return `<div class="chapter-stat-row"><div><strong>Bab ${c.bab} · ${esc(c.korea)}</strong><small>${s}/${items.length} dipelajari</small></div><div class="chapter-mini-progress"><div class="progress"><span style="width:${items.length?Math.round(s/items.length*100):0}%"></span></div><small>${items.length?Math.round(s/items.length*100):0}%</small></div><div class="chapter-acc"><strong>${acc}%</strong><small>akurasi</small></div></div>`;}).join('');
-  app.innerHTML=`<div class="section-head"><div><div class="eyebrow">STATISTIK</div><h1>Perkembangan belajar.</h1><p class="muted">Semua progres tersimpan di perangkat ini.</p></div></div><div class="stats-grid"><div class="card stat"><span class="muted">Soal dijawab</span><strong>${progress.answered||0}</strong></div><div class="card stat"><span class="muted">Jawaban benar</span><strong>${progress.correct||0}</strong></div><div class="card stat"><span class="muted">Akurasi</span><strong>${accuracy()}%</strong></div><div class="card stat"><span class="muted">XP</span><strong>${progress.xp||0}</strong></div><div class="card stat"><span class="muted">Streak</span><strong>🔥 ${progress.streak||0}</strong></div><div class="card stat"><span class="muted">Pencapaian</span><strong>${earned.length}/${achievementDefs.length}</strong></div></div>
+  const chapterRows=chapters.map(c=>{const items=itemsFor(c.bab), s=items.filter(v=>progress.seen[wordKey(v)]).length, masteredCount=items.filter(v=>mastery(v)==='dikuasai').length, accItems=items.filter(v=>progress.rightByWord[wordKey(v)]||progress.wrongByWord[wordKey(v)]);const right=accItems.reduce((a,v)=>a+(progress.rightByWord[wordKey(v)]||0),0),wrong=accItems.reduce((a,v)=>a+(progress.wrongByWord[wordKey(v)]||0),0),acc=right+wrong?Math.round(right/(right+wrong)*100):0, masterPct=items.length?Math.round(masteredCount/items.length*100):0;return `<div class="chapter-stat-row"><div><strong>Bab ${c.bab} · ${esc(c.korea)}</strong><small>${s}/${items.length} dipelajari · ${masteredCount} dikuasai</small></div><div class="chapter-mini-progress"><div class="progress"><span style="width:${masterPct}%"></span></div><small>${masterPct}% dikuasai</small></div><div class="chapter-acc"><strong>${acc}%</strong><small>akurasi</small></div></div>`;}).join('');
+  app.innerHTML=`<div class="section-head"><div><div class="eyebrow">STATISTIK</div><h1>Perkembangan belajar.</h1><p class="muted">Semua progres tersimpan di perangkat ini.</p></div></div><div class="stats-grid"><div class="card stat"><span class="muted">Soal dijawab</span><strong>${progress.answered||0}</strong></div><div class="card stat"><span class="muted">Jawaban benar</span><strong>${progress.correct||0}</strong></div><div class="card stat"><span class="muted">Akurasi</span><strong>${accuracy()}%</strong></div><div class="card stat"><span class="muted">XP</span><strong>${progress.xp||0}</strong></div><div class="card stat"><span class="muted">Streak</span><strong>🔥 ${progress.streak||0}</strong></div><div class="card stat"><span class="muted">Pencapaian</span><strong>${earned.length}/${achievementDefs.length}</strong></div><div class="card stat"><span class="muted">Sesi Listening</span><strong>${progress.listening||0}</strong></div></div>
   <div class="two-col stats-main"><div class="card"><div class="eyebrow">LEVEL</div><h2>Level ${level.level} · ${esc(level.name)}</h2><p class="muted">${progress.xp||0} XP · ${Math.max(0,level.next-(progress.xp||0))} XP menuju level berikutnya</p><div class="progress"><span style="width:${level.pct}%"></span></div><small>${level.pct}%</small></div><div class="card"><div class="eyebrow">PENGUASAAN</div><h2>${seen.toLocaleString('id-ID')} / ${total.toLocaleString('id-ID')}</h2><p class="muted">Kosakata yang pernah dipelajari.</p><div class="progress"><span style="width:${pct}%"></span></div><small>${pct}% selesai</small></div></div>
   <div class="section-head"><div><div class="eyebrow">PER BAB</div><h2>Progress & akurasi</h2></div></div><div class="card chapter-stats">${chapterRows}</div>
+  <div class="two-col stats-main"><div class="card"><div class="eyebrow">LISTENING</div><h2>🔊 Pengaturan Audio Korea</h2><div class="two-col"><label>Kecepatan<select id="speechRate" class="select" style="width:100%"><option value="0.70">0.70× Pelan</option><option value="0.85">0.85× Jelas</option><option value="1">1.00× Normal</option><option value="1.15">1.15× Cepat</option></select></label><label>Jeda “/”<select id="listenPause" class="select" style="width:100%"><option value="500">500 ms</option><option value="650">650 ms</option><option value="800">800 ms</option><option value="1000">1 detik</option></select></label></div><p class="muted">Saat ada tanda <strong>/</strong>, setiap bagian dibacakan terpisah agar tidak bertabrakan.</p></div><div class="card"><div class="eyebrow">REVIEW TERJADWAL</div><h2>${dueReviewPool(vocab).length} kosakata siap direview</h2><p class="muted">Jadwal review dibuat berdasarkan jawabanmu. Kata yang benar akan diberi jarak lebih panjang.</p><button class="btn primary" data-action="quiz" data-mode="spaced">🧠 Mulai Review</button></div></div>
+  <div class="section-head"><div><div class="eyebrow">7 HARI TERAKHIR</div><h2>Aktivitas belajar</h2></div></div><div class="card weekly-chart">${[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));const k=d.toISOString().slice(0,10);const count=Object.keys(progress.studyDays||{}).includes(k)?1:0;return `<div class="day-bar"><span>${d.toLocaleDateString('id-ID',{weekday:'short'}).slice(0,3)}</span><div class="day-track"><i style="height:${count?100:12}%"></i></div><small>${count?'Belajar':'-'}</small></div>`;}).join('')}</div>
   <div class="section-head"><div><div class="eyebrow">PENCAPAIAN</div><h2>Achievement</h2></div></div><div class="achievement-grid">${achievementDefs.map(a=>`<div class="achievement ${progress.achievements[a[0]]?'earned':''}"><div class="achievement-icon">${a[1].split(' ')[0]}</div><div><strong>${esc(a[1].slice(a[1].indexOf(' ')+1))}</strong><p class="muted">${esc(a[2])}</p></div><span>${progress.achievements[a[0]]?'✓':'🔒'}</span></div>`).join('')}</div>
   <div class="card focus-panel"><div class="section-head compact"><div><div class="eyebrow">FOKUS</div><h2>Latihan berikutnya</h2><p class="muted">${difficultPool(vocab).length} kosakata perlu perhatian dan ${vocab.filter(v=>(progress.wrongByWord[wordKey(v)]||0)>0).length} kosakata punya riwayat salah.</p></div></div><div class="actions"><button class="btn" data-action="quiz" data-mode="hard">🔴 Latihan Sulit</button><button class="btn" data-action="quiz" data-mode="review">📝 Review Salah</button><button class="btn" data-action="quiz" data-mode="listening">🔊 Listening</button><button class="btn" data-action="quiz" data-mode="exam">🎯 Simulasi Ujian</button></div></div><div class="actions"><button class="btn" id="exportStats">Backup Progress</button><label class="btn">Restore Progress<input id="importStats" type="file" accept="application/json" hidden></label><button class="btn" id="resetStats">Reset statistik</button></div>`;
-  document.getElementById('resetStats').onclick=()=>{if(confirm('Reset statistik di perangkat ini?')){progress=structuredClone?structuredClone(defaultProgress):JSON.parse(JSON.stringify(defaultProgress));save();render();toastMsg('Statistik direset');}};
+  document.getElementById('resetStats').onclick=()=>{if(confirm('Reset statistik di perangkat ini?')){progress=typeof structuredClone==='function'?structuredClone(defaultProgress):JSON.parse(JSON.stringify(defaultProgress));save();render();toastMsg('Statistik direset');}};
   document.getElementById('exportStats').onclick=()=>{const blob=new Blob([JSON.stringify({version:DATA_VERSION,progress,settings},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='eps-topik-progress.json';a.click();URL.revokeObjectURL(a.href);};
-  document.getElementById('importStats').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.progress)throw Error();progress=Object.assign({},defaultProgress,d.progress);progress.seen ||= {};progress.wrongByWord ||= {};progress.rightByWord ||= {};progress.mastered ||= {};progress.favorites ||= {};progress.achievements ||= {};progress.quizHistory ||= [];save();render();toastMsg('Progress berhasil dipulihkan');}catch(err){toastMsg('File progress tidak valid');}};r.readAsText(f);};
+  document.getElementById('importStats').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.progress)throw Error();progress=Object.assign({},defaultProgress,d.progress);progress.seen ||= {};progress.wrongByWord ||= {};progress.rightByWord ||= {};progress.mastered ||= {};progress.favorites ||= {};progress.achievements ||= {};progress.quizHistory ||= []; progress.studyDays ||= {}; progress.reviewDue ||= {}; progress.dailyChallenges ||= {}; progress.listening ||= 0; save();render();toastMsg('Progress berhasil dipulihkan');}catch(err){toastMsg('File progress tidak valid');}};r.readAsText(f);};
+  const speechRateEl=document.getElementById('speechRate'); if(speechRateEl){speechRateEl.value=String(settings.speechRate); speechRateEl.onchange=e=>{settings.speechRate=Number(e.target.value);localStorage.setItem(SETTINGS,JSON.stringify(settings));toastMsg(`Kecepatan audio ${settings.speechRate.toFixed(2)}×`);};}
+  const pauseEl=document.getElementById('listenPause'); if(pauseEl){pauseEl.value=String(settings.listeningPause); pauseEl.onchange=e=>{settings.listeningPause=Number(e.target.value);localStorage.setItem(SETTINGS,JSON.stringify(settings));toastMsg(`Jeda audio ${settings.listeningPause} ms`);};}
   bindActions();
   updateActiveNav();
 }

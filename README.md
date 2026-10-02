@@ -96,3 +96,35 @@ Data tetap menggunakan `data/vocabulary.json` (2.355 entri) dan `data/chapters.j
 - Feature Pack 04 quiz feedback retained: selection does not blink; correct-answer center popup; auto-next; two-attempt wrong-answer flow.
 - Feature Pack 05 learning suite retained: Korean speech synthesis, listening mode, difficult/review modes, exam simulation, source filter, backup/restore, progress/streak/XP/achievements, PWA.
 - Service worker updated to network-first for app-shell files and cache-busted assets to reduce stale deployment issues.
+
+
+## Feature Pack 08
+- Correct-answer popup auto-closes before advancing, preventing a stale modal from blocking the next listening question.
+- The correct popup no longer shows a disabled 'Berikutnya otomatis…' button.
+- Exam mode disables question/card/choice entrance animations so the whole question does not blink every timer refresh; only the timer pulses.
+
+
+## Feature Pack 08 — QA & Fixes
+- Memperbaiki timer Simulasi Ujian agar tidak me-render ulang seluruh kartu setiap detik; hanya angka timer yang diperbarui.
+- Animasi exam dimatikan pada kartu, pertanyaan, pilihan, dan progress; hanya timer yang melakukan pulse.
+- Popup jawaban benar tetap tanpa tombol tindakan dan otomatis ditutup sebelum soal berikutnya.
+- Review jawaban salah pada Simulasi Ujian sekarang tetap tercatat di hasil.
+- Tombol Coba Lagi mempertahankan mode latihan dan kumpulan soal sebelumnya.
+- Label Simulasi Ujian tidak lagi menampilkan “Kesempatan 2 dari 2”; mode ujian langsung lanjut setelah jawaban.
+- Cache-busting HTML/CSS/JS dan service worker dinaikkan ke versi 08.
+- Pemeriksaan JSON, jumlah Bab, jumlah kosakata, ID, duplikasi, whitespace, dan sintaks JavaScript dilakukan sebelum paket dibuat.
+
+
+## Feature Pack 09 — Audio slash pause
+- Korean listening now treats `/` as a pronunciation separator.
+- Each Korean variant is spoken as a separate SpeechSynthesis utterance.
+- A 650 ms pause is inserted between slash-separated terms to prevent the voices from running together.
+- Speech rate is slightly reduced to 0.80 for clearer listening.
+- Existing quiz, listening, exam, UI, data, and progress features are preserved.
+
+## Feature Pack 10 additions
+- Review Terjadwal (spaced repetition)
+- Daily Challenge 10 soal + bonus XP harian
+- Pengaturan kecepatan audio Korea dan jeda tanda `/`
+- Statistik sesi listening dan aktivitas 7 hari
+- Persentase kosakata dikuasai per Bab
