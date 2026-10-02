@@ -291,3 +291,171 @@ body{background:var(--bg)}
   .achievement{padding:16px}
   .chapter-stat-row{padding:18px 16px;gap:14px}
 }
+
+/* =========================================================
+   COSMIC FLAT V9 — Statistics refinement
+   Goal: compact editorial hierarchy, breathable metrics,
+   clearer grouping, no crowded grids or oversized cards.
+   ========================================================= */
+
+/* Page rhythm */
+.section-head{margin-bottom:22px}
+.section-head h1{max-width:760px;font-size:clamp(38px,6vw,64px);line-height:.98;letter-spacing:-.055em}
+.section-head p{max-width:720px;font-size:17px;line-height:1.55}
+
+/* Metrics: independent flat tiles, never a joined table. */
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;
+  margin-top:28px;
+  background:transparent;
+  border:0;
+}
+.stats-grid .stat{
+  min-width:0;
+  min-height:118px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:12px;
+  padding:18px 18px 16px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--surface);
+}
+.stats-grid .stat span{
+  display:block;
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.35;
+}
+.stats-grid .stat strong{
+  display:block;
+  margin:0;
+  color:var(--ink);
+  font-size:34px;
+  line-height:1;
+  letter-spacing:-.045em;
+  white-space:nowrap;
+}
+.stats-grid .stat:nth-child(3) strong{color:var(--cosmic-cyan)}
+.stats-grid .stat:nth-child(4) strong{color:var(--cosmic-pink)}
+
+/* Level becomes a compact information band instead of a giant empty card. */
+.stats-main .level-card{
+  margin-top:18px;
+  display:block;
+  padding:24px 26px;
+  border-radius:12px;
+  background:var(--surface);
+  border:1px solid var(--line);
+}
+.stats-main .level-card h2{font-size:26px;line-height:1.15;margin:7px 0 8px}
+.stats-main .level-card p{margin:0 0 18px}
+.stats-main .level-ring{display:none}
+.stats-main .level-progress{display:block}
+.stats-main .level-progress .progress{height:8px}
+
+/* Achievements: compact rows, not giant feature cards. */
+.stats-main .achievement-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stats-main .achievement{
+  min-width:0;
+  min-height:82px;
+  display:grid;
+  grid-template-columns:38px minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  padding:13px 14px;
+  border-radius:10px;
+  background:var(--surface);
+  border:1px solid var(--line);
+}
+.stats-main .achievement-icon{width:38px;height:38px;border-radius:9px}
+.stats-main .achievement strong{font-size:15px;line-height:1.25}
+.stats-main .achievement p{margin:3px 0 0;font-size:13px;line-height:1.35}
+.stats-main .achievement .ui-icon{width:18px;height:18px}
+
+/* Focus section: one clear panel with a subtle cosmic rail. */
+.stats-main .focus-panel{
+  position:relative;
+  margin-top:22px;
+  padding:24px 26px 26px;
+  border-radius:12px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  overflow:hidden;
+}
+.stats-main .focus-panel::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:3px;
+  background:var(--cosmic-cyan);
+}
+.stats-main .focus-panel .section-head{margin-bottom:14px}
+.stats-main .focus-panel h2{font-size:30px;line-height:1.1;margin:4px 0 8px}
+.stats-main .focus-panel .muted{max-width:620px;line-height:1.55}
+.stats-main .focus-panel .actions{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+  margin-top:18px;
+}
+.stats-main .focus-panel .btn{min-width:0;padding:12px 14px;font-size:14px}
+
+/* Backup/reset controls form one quiet utility row. */
+.stats-main > .actions:last-child{
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  margin-top:16px;
+}
+.stats-main > .actions:last-child .btn{font-size:13px;padding:11px 14px}
+
+/* Mobile: 2-column metric rhythm, compact rows and no clipped labels. */
+@media (max-width:680px){
+  .section-head{margin-bottom:18px}
+  .section-head h1{font-size:40px;line-height:1;letter-spacing:-.045em}
+  .section-head p{font-size:15px}
+
+  .stats-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+    margin-top:20px;
+  }
+  .stats-grid .stat{
+    min-height:106px;
+    padding:15px;
+    border-radius:11px;
+  }
+  .stats-grid .stat span{font-size:13px;line-height:1.35}
+  .stats-grid .stat strong{font-size:29px}
+
+  .stats-main .level-card{padding:20px 18px;margin-top:16px}
+  .stats-main .level-card h2{font-size:22px}
+  .stats-main .level-card p{font-size:14px;margin-bottom:14px}
+
+  .stats-main .achievement-grid{grid-template-columns:1fr;gap:9px}
+  .stats-main .achievement{min-height:74px;padding:11px 12px}
+  .stats-main .achievement p{font-size:12px}
+
+  .stats-main .focus-panel{padding:22px 18px 20px;margin-top:18px}
+  .stats-main .focus-panel h2{font-size:25px}
+  .stats-main .focus-panel .muted{font-size:14px}
+  .stats-main .focus-panel .actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .stats-main .focus-panel .btn{padding:11px 9px;font-size:13px}
+
+  .stats-main > .actions:last-child{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .stats-main > .actions:last-child .btn{width:100%;font-size:12px;padding:11px 8px}
+  .stats-main > .actions:last-child .btn:last-child{grid-column:1/-1;justify-self:start;width:auto}
+
+  /* flatter bottom navigation; active item is indicated by color + top rule */
+  .bottom-nav button.active{
+    background:transparent;
+    border:0;
+    border-top:2px solid var(--blue);
+    border-radius:0;
+    color:var(--blue-dark);
+  }
+}
