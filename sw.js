@@ -1,5 +1,5 @@
-const CACHE='eps-topik-20261002-ui03';
-const CORE=['./','./index.html','./style.css?v=20261002-ui-redesign-03','./script.js?v=20261002-feature-pack-11','./data/chapters.json','./data/vocabulary.json','./manifest.webmanifest'];
+const CACHE='eps-topik-20261002-flat-v5';
+const CORE=['./','./index.html','./style.css?v=20261002-flat-v5','./script.js?v=20261002-feature-pack-11-flat-v5','./data/chapters.json','./data/vocabulary.json','./manifest.webmanifest'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return; const u=new URL(e.request.url); const appShell=['/','/index.html','/style.css','/script.js'].includes(u.pathname); if(appShell){e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request))); return;} e.respondWith(caches.match(e.request).then(cached=>cached||fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>cached)));});
