@@ -148,7 +148,18 @@ document.getElementById('themeBtn').addEventListener('click', () => {
 
 function save() { localStorage.setItem(STORE, JSON.stringify(progress)); }
 function esc(s) { return String(s).replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c])); }
-function toastMsg(s) { toast.textContent = s; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1700); }
+let toastTimer = null;
+function toastMsg(s) {
+  if (!toast) return;
+  if (toastTimer) clearTimeout(toastTimer);
+  toast.textContent = s;
+  toast.classList.add('show');
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+    toast.textContent = '';
+    toastTimer = null;
+  }, 1700);
+}
 function itemsFor(ch) { return vocab.filter(v => v.bab === ch); }
 function wordKey(v) { return String(v.id ?? `${v.bab}-${v.korea}-${v.arti}`); }
 function wordStats(v) {
