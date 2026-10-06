@@ -128,3 +128,15 @@ Data tetap menggunakan `data/vocabulary.json` (2.355 entri) dan `data/chapters.j
 - Pengaturan kecepatan audio Korea dan jeda tanda `/`
 - Statistik sesi listening dan aktivitas 7 hari
 - Persentase kosakata dikuasai per Bab
+
+
+## Download PDF per Bab
+
+Setiap Bab 1–30 memiliki PDF siap cetak pada folder `pdf/`.
+PDF berformat A4 dengan tabel:
+- No.
+- 한국어
+- Arti Bahasa Indonesia
+- Sumber
+
+Termasuk `어휘` dan `문화와 정보`. Tombol `PDF` tersedia pada kartu Bab dan halaman detail kosakata.
