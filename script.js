@@ -14,6 +14,10 @@ const state = {
   quiz: null, review: null, source: 'Semua'
 };
 
+const AI_ENDPOINT = 'https://api.kyzzz.xyz/api/ai/chatgpt';
+const AI_KEY_STORE = 'epsTopikAiApiKey';
+let aiBusy = false;
+
 const STORE = 'epsTopikProgress';
 const SETTINGS = 'epsTopikSettings';
 const CREATOR_SEEN = 'epsTopikCreatorSeen';
@@ -365,6 +369,7 @@ function render() {
   if (state.view === 'flashcards') return flashcards();
   if (state.view === 'quiz') return quizView();
   if (state.view === 'stats') return statsView();
+  if (state.view === 'ai') return aiView();
 }
 
 function home() {
@@ -378,6 +383,7 @@ function home() {
   <div class="dashboard-stats"><div class="mini-stat"><span class="muted">Total kosakata</span><strong>${total.toLocaleString('id-ID')}</strong></div><div class="mini-stat"><span class="muted">Akurasi</span><strong>${accuracy()}%</strong></div><div class="mini-stat"><span class="muted">Streak</span><strong>${progress.streak || 0} hari</strong></div></div>
   <div class="card level-card"><div><span class="eyebrow">LEVEL BELAJAR</span><h2>Level ${level.level} · ${esc(level.name)}</h2><p class="muted">${progress.xp || 0} XP total · ${Math.max(0, level.next-(progress.xp||0))} XP menuju level berikutnya</p></div><div class="level-ring"><strong>${level.level}</strong><span>LEVEL</span></div><div class="level-progress"><div class="progress"><span style="width:${level.pct}%"></span></div><small>${level.pct}% ke level berikutnya</small></div></div>
   <div class="section-head"><div><h2>Bab tersedia</h2><p class="muted">Mulai dari Bab 1 atau pilih bab tertentu.</p></div><button class="btn" data-action="chapters">Lihat semua</button></div><div class="grid">${chapters.slice(0,6).map(chapterCard).join('')}</div>
+  <div class="section-head"><div><h2>AI Tutor EPS-TOPIK</h2><p class="muted">Tanyakan arti, contoh kalimat, perbedaan kata, atau minta penjelasan berdasarkan kosakata Bab 1–30.</p></div></div><div class="card ai-home-card"><div><div class="feature-icon">AI</div><h3>Tanya AI tentang Kosakata Korea</h3><p class="muted">AI akan diberi konteks kosakata dari dataset EPS-TOPIK agar jawabannya lebih terarah.</p></div><button class="btn primary" data-action="ai">Buka AI Tutor →</button></div>
   <div class="section-head"><div><h2>Tantangan Hari Ini</h2><p class="muted">10 soal pilihan harian + review terjadwal. ${dailyChallengeDone()?'Sudah selesai hari ini.':'Belum selesai.'}</p></div></div><div class="grid"><div class="card feature-card daily-card"><div class="feature-icon">HARIAN</div><h3>Daily Challenge</h3><p class="muted">10 soal yang berubah setiap hari. Selesaikan untuk mendapatkan bonus XP.</p><button class="btn primary" data-action="quiz" data-mode="daily">${dailyChallengeDone()?'Ulangi Tantangan':'Mulai Tantangan'} →</button></div><div class="card feature-card"><div class="feature-icon">REVIEW</div><h3>Review Terjadwal</h3><p class="muted">Kosakata yang waktunya sudah tiba akan muncul kembali secara otomatis.</p><button class="btn" data-action="quiz" data-mode="spaced">Review Sekarang</button></div></div><div class="section-head"><div><h2>Fokus belajar</h2><p class="muted">Kata yang belum dikuasai dan sering salah akan lebih mudah ditemukan.</p></div></div><div class="grid"><div class="card feature-card"><div class="feature-icon">UJIAN</div><h3>Simulasi Ujian</h3><p class="muted">Mode ujian tanpa feedback langsung.</p><button class="btn" data-action="quiz" data-mode="exam">Mulai Simulasi</button></div><div class="card feature-card"><div class="feature-icon">FOKUS</div><h3>Kosakata Sulit</h3><p class="muted">Latih kembali kata yang sering salah.</p><button class="btn" data-action="vocab" data-status="salah">Latihan Kata Sulit</button></div><div class="card feature-card"><div class="feature-icon">KARTU</div><h3>Kartu Belajar</h3><p class="muted">Balik kartu dengan animasi dan tandai “Saya tahu”.</p><button class="btn" data-action="flashcards">Buka Kartu</button></div><div class="card feature-card"><div class="feature-icon">AUDIO</div><h3>Listening Korea</h3><p class="muted">Dengarkan pelafalan Korea lalu pilih arti yang benar.</p><button class="btn" data-action="quiz" data-mode="listening">Mulai Listening</button></div><div class="card feature-card"><div class="feature-icon">PROGRESS</div><h3>Pencapaian</h3><p class="muted">${earnedAchievements().length} / ${achievementDefs.length} pencapaian terbuka.</p><button class="btn" data-action="stats">Lihat Statistik</button></div></div>`;
   bindActions(); updateActiveNav();
 }
@@ -585,6 +591,67 @@ function statsView() {
   const pauseEl=document.getElementById('listenPause'); if(pauseEl){pauseEl.value=String(settings.listeningPause); pauseEl.onchange=e=>{settings.listeningPause=Number(e.target.value);localStorage.setItem(SETTINGS,JSON.stringify(settings));toastMsg(`Jeda audio ${settings.listeningPause} ms`);};}
   bindActions();
   updateActiveNav();
+}
+
+function aiView() {
+  const savedKey = readJSON(AI_KEY_STORE, '');
+  app.innerHTML = `<div class="section-head"><div><div class="eyebrow">AI TUTOR</div><h1>Tanya AI tentang kosakata Korea.</h1><p class="muted">Gunakan AI untuk memahami arti, contoh kalimat, perbedaan kata, atau belajar berdasarkan Bab 1–30.</p></div><button class="btn" data-action="home">Beranda</button></div>
+  <div class="two-col ai-layout">
+    <section class="card ai-chat-card">
+      <div class="ai-chat-head"><div><span class="eyebrow">EPS-TOPIK AI</span><h2>Pembimbing Kosakata</h2></div><span class="ai-status"><i></i> Siap</span></div>
+      <div id="aiMessages" class="ai-messages"><div class="ai-message ai-message-bot"><strong>AI Tutor</strong><p>Halo! Tanyakan sesuatu seperti:</p><div class="ai-suggestions"><button class="pill" data-ai-prompt="Apa arti 먹다?">Apa arti 먹다?</button><button class="pill" data-ai-prompt="Buatkan contoh kalimat untuk 공부하다.">Contoh kalimat</button><button class="pill" data-ai-prompt="Apa perbedaan 먹다 dan 식사하다?">Bandingkan kata</button><button class="pill" data-ai-prompt="Quiz saya tentang kosakata Bab 10.">Quiz Bab 10</button></div></div></div>
+      <form id="aiForm" class="ai-form"><textarea id="aiPrompt" class="ai-input" rows="3" maxlength="1200" placeholder="Contoh: Apa arti 배탈이 나다 dan buatkan contoh kalimatnya?"></textarea><button class="btn primary" id="aiSend" type="submit">Kirim →</button></form>
+    </section>
+    <aside class="card ai-settings-card"><div class="eyebrow">KONFIGURASI</div><h2>API AI</h2><p class="muted">Endpoint sudah disiapkan. API key disimpan lokal di perangkat ini.</p><label class="ai-label">API key<input id="aiKey" class="search" type="password" autocomplete="off" placeholder="Masukkan API key" value="${esc(savedKey)}"></label><button class="btn" id="saveAiKey">Simpan API key</button><div class="ai-notice"><strong>Catatan keamanan</strong><p class="muted">Endpoint menggunakan API key melalui query parameter. Jika website dipublikasikan, key yang dipakai dari browser dapat terlihat oleh pengguna. Untuk deployment publik sebaiknya gunakan backend/proxy.</p></div><div class="ai-context"><strong>Konteks lokal</strong><p class="muted">AI akan menerima beberapa kosakata yang paling relevan dari dataset 2.355 entri saat memungkinkan.</p></div></aside>
+  </div>`;
+  bindActions();
+  document.getElementById('saveAiKey').onclick = () => { localStorage.setItem(AI_KEY_STORE, document.getElementById('aiKey').value.trim()); toastMsg('API key disimpan di perangkat ini'); };
+  document.querySelectorAll('[data-ai-prompt]').forEach(b => b.onclick = () => { const input=document.getElementById('aiPrompt'); input.value=b.dataset.aiPrompt; input.focus(); });
+  document.getElementById('aiForm').onsubmit = async (e) => { e.preventDefault(); const input=document.getElementById('aiPrompt'); const prompt=input.value.trim(); if(!prompt || aiBusy) return; const key=document.getElementById('aiKey').value.trim(); if(!key){ toastMsg('Masukkan API key terlebih dahulu'); document.getElementById('aiKey').focus(); return; } localStorage.setItem(AI_KEY_STORE,key); addAiMessage('user',prompt); input.value=''; await askAiTutor(prompt,key); };
+}
+
+function addAiMessage(role, text) {
+  const box=document.getElementById('aiMessages'); if(!box)return;
+  const el=document.createElement('div'); el.className=`ai-message ai-message-${role==='user'?'user':'bot'}`;
+  if(role==='bot') el.innerHTML=`<strong>AI Tutor</strong><div>${formatAiText(text)}</div>`; else el.innerHTML=`<div>${esc(text).replace(/\n/g,'<br>')}</div>`;
+  box.appendChild(el); box.scrollTop=box.scrollHeight;
+}
+function formatAiText(text) {
+  const safe=esc(text==null?'':String(text));
+  return safe.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+}
+function findAiContext(prompt) {
+  const q=prompt.toLowerCase();
+  const tokens=q.match(/[가-힣]{2,}/g)||[];
+  const candidates=vocab.filter(v=>tokens.some(t=>v.korea.includes(t)) || q.includes(String(v.arti).toLowerCase()));
+  if(candidates.length) return candidates.slice(0,8);
+  const latin=q.split(/[^a-zA-ZÀ-ÿ0-9]+/).filter(x=>x.length>2);
+  return vocab.filter(v=>latin.some(t=>String(v.arti).toLowerCase().includes(t))).slice(0,8);
+}
+function buildAiPrompt(userPrompt) {
+  const context=findAiContext(userPrompt);
+  const contextText=context.length ? context.map(v=>`- ${v.korea} — ${v.arti} — ${v.kategori} — Bab ${v.bab} — ${v.sumber}`).join('\n') : 'Tidak ada kecocokan langsung di dataset.';
+  return `Kamu adalah AI Tutor khusus EPS-TOPIK untuk pelajar Indonesia. Jawab dalam bahasa Indonesia, pertahankan kata Korea dalam Hangul. Fokus pada pembelajaran kosakata Korea dan jangan mengarang bahwa sebuah kata ada di dataset jika konteks tidak menemukannya. Jika pertanyaan tidak terkait kosakata Korea/EPS-TOPIK, jawab singkat lalu arahkan kembali ke topik belajar.\n\nKonteks kosakata lokal:\n${contextText}\n\nPertanyaan pengguna:\n${userPrompt}`;
+}
+function extractAiText(data) {
+  if(typeof data==='string') return data;
+  const candidates=[data?.answer,data?.response,data?.message,data?.text,data?.result,data?.content,data?.data?.answer,data?.data?.response,data?.data?.message,data?.data?.text,data?.data?.content];
+  for(const x of candidates) if(typeof x==='string' && x.trim()) return x;
+  if(Array.isArray(data?.choices) && data.choices[0]) return data.choices[0]?.message?.content || data.choices[0]?.text || '';
+  return JSON.stringify(data,null,2);
+}
+async function askAiTutor(userPrompt,key) {
+  aiBusy=true; const send=document.getElementById('aiSend'); if(send){send.disabled=true;send.textContent='Memproses…';}
+  const thinking=document.createElement('div'); thinking.className='ai-message ai-message-bot ai-thinking'; thinking.id='aiThinking'; thinking.innerHTML='<strong>AI Tutor</strong><p>Sedang menyusun jawaban…</p>'; document.getElementById('aiMessages')?.appendChild(thinking);
+  try {
+    const url=new URL(AI_ENDPOINT); url.searchParams.set('prompt',buildAiPrompt(userPrompt)); url.searchParams.set('apikey',key);
+    const res=await fetch(url.toString(),{method:'GET'});
+    const raw=await res.text(); let data; try{data=JSON.parse(raw)}catch{data=raw}
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    document.getElementById('aiThinking')?.remove(); addAiMessage('bot',extractAiText(data));
+  } catch(err) {
+    document.getElementById('aiThinking')?.remove(); addAiMessage('bot',`Maaf, AI tidak dapat dihubungi. Periksa API key, koneksi, atau izin CORS endpoint.\n\nDetail: ${err.message}`);
+  } finally { aiBusy=false; if(send){send.disabled=false;send.textContent='Kirim →';} }
 }
 
 function updateActiveNav(){document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));}

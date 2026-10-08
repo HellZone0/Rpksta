@@ -611,3 +611,31 @@ body{background:var(--bg)}
   .section-actions{width:100%}
   .section-actions .btn{flex:1}
 }
+
+
+/* AI Tutor */
+.ai-home-card{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.ai-layout{align-items:start}
+.ai-chat-card{min-height:620px;display:flex;flex-direction:column}
+.ai-chat-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:14px}
+.ai-status{font-size:.78rem;color:var(--muted);display:inline-flex;align-items:center;gap:7px}
+.ai-status i{width:7px;height:7px;border-radius:50%;background:#35c98b;display:block}
+.ai-messages{flex:1;min-height:390px;max-height:560px;overflow:auto;padding:18px 2px;display:flex;flex-direction:column;gap:12px}
+.ai-message{max-width:88%;padding:13px 15px;border:1px solid var(--border);border-radius:12px;line-height:1.6;font-size:.94rem}
+.ai-message-bot{align-self:flex-start;background:var(--surface)}
+.ai-message-user{align-self:flex-end;background:var(--accent);color:#fff;border-color:var(--accent)}
+.ai-message strong{display:block;font-size:.78rem;margin-bottom:5px}
+.ai-message-user strong{display:none}
+.ai-message p{margin:.35rem 0 .7rem}
+.ai-suggestions{display:flex;flex-wrap:wrap;gap:7px}
+.ai-form{display:flex;gap:10px;border-top:1px solid var(--border);padding-top:14px}
+.ai-input{flex:1;resize:vertical;min-height:52px;padding:12px 13px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font:inherit;outline:none}
+.ai-input:focus,.ai-label .search:focus{border-color:var(--accent)}
+.ai-settings-card{position:sticky;top:88px}
+.ai-label{display:flex;flex-direction:column;gap:7px;font-weight:600;font-size:.9rem;margin:16px 0 10px}
+.ai-notice,.ai-context{border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:16px}
+.ai-notice p,.ai-context p{margin:.35rem 0 0;font-size:.84rem;line-height:1.5}
+.ai-thinking{opacity:.7}
+.nav-ai-badge{display:inline-grid;place-items:center;min-width:24px;height:18px;padding:0 5px;border:1px solid currentColor;border-radius:5px;font-size:.66rem;font-weight:800;letter-spacing:.03em}
+@media (max-width:800px){.ai-layout{grid-template-columns:1fr}.ai-settings-card{position:static}.ai-chat-card{min-height:0}.ai-messages{max-height:52vh}.ai-form{flex-direction:column}.ai-form .btn{width:100%}}
+@media (max-width:640px){.ai-home-card{align-items:flex-start;flex-direction:column}.ai-message{max-width:94%}}
