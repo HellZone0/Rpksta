@@ -322,6 +322,7 @@ function ico(name, label='') {
     lock:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
     trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0zM12 13v5M8 20h8"/><path d="M8 6H4v2a4 4 0 0 0 4 4M16 6h4v2a4 4 0 0 1-4 4"/>',
     filter:'<path d="M4 6h16M7 12h10M10 18h4"/>',
+    sparkles:'<path d="m12 3 1.4 4.1L17.5 9 13.4 10.4 12 14.5l-1.4-4.1L6.5 9l4.1-1.9z"/><path d="m19 14 .7 2.3L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.7z"/>',
     play:'<path d="m8 5 11 7-11 7z"/>',
     plus:'<path d="M12 5v14M5 12h14"/>'
   };
@@ -381,7 +382,7 @@ function home() {
   const seen = Object.keys(progress.seen || {}).length;
   const pct = total ? Math.round(seen / total * 100) : 0;
   const level = levelInfo(progress.xp || 0);
-  app.innerHTML = `<section class="hero"><div><div class="eyebrow">EPS-TOPIK 한국어 어휘</div><h1>Belajar kosakata Korea <span class="accent">lebih terarah.</span></h1><p>Pelajari dan uji kosakata EPS-TOPIK Bab 1–30. Lengkap dengan kosakata utama dan <strong>문화와 정보</strong>.</p><div class="actions"><button class="btn primary" data-action="chapters">Lihat Bab 1–30 →</button><button class="btn" data-action="quiz">Mulai Latihan Soal</button></div></div><div class="hero-card"><span>Total kosakata</span><strong>${total.toLocaleString('id-ID')}</strong><span>Bab 1–30 · ${mainCount.toLocaleString('id-ID')} utama + ${infoCount.toLocaleString('id-ID')} 정보</span><span class="source-note">Dataset ${DATA_VERSION}</span><hr><span>Sudah dipelajari</span><strong>${seen}</strong><div class="progress"><span style="width:${pct}%"></span></div><div class="hero-ai-launcher"><div><span class="hero-ai-kicker">AI TUTOR</span><strong>Tanya kosakata Korea</strong><small>Bisa bertanya kata di luar Bab 1–30.</small></div><button class="btn primary hero-ai-btn" data-action="ai">Tanya AI →</button></div></div></section>
+  app.innerHTML = `<section class="hero"><div><div class="eyebrow">EPS-TOPIK 한국어 어휘</div><h1>Belajar kosakata Korea <span class="accent">lebih terarah.</span></h1><p>Pelajari dan uji kosakata EPS-TOPIK Bab 1–30. Lengkap dengan kosakata utama dan <strong>문화와 정보</strong>.</p><div class="actions"><button class="btn primary" data-action="chapters">Lihat Bab 1–30 →</button><button class="btn" data-action="quiz">Mulai Latihan Soal</button></div></div><div class="hero-card"><span>Total kosakata</span><strong>${total.toLocaleString('id-ID')}</strong><span>Bab 1–30 · ${mainCount.toLocaleString('id-ID')} utama + ${infoCount.toLocaleString('id-ID')} 정보</span><span class="source-note">Dataset ${DATA_VERSION}</span><hr><span>Sudah dipelajari</span><strong>${seen}</strong><div class="progress"><span style="width:${pct}%"></span></div><button class="hero-ai-fab" data-action="ai" title="Buka AI Tutor" aria-label="Buka AI Tutor">${ico('sparkles')}</button></div></section>
   <div class="dashboard-stats"><div class="mini-stat"><span class="muted">Total kosakata</span><strong>${total.toLocaleString('id-ID')}</strong></div><div class="mini-stat"><span class="muted">Akurasi</span><strong>${accuracy()}%</strong></div><div class="mini-stat"><span class="muted">Streak</span><strong>${progress.streak || 0} hari</strong></div></div>
   <div class="card level-card"><div><span class="eyebrow">LEVEL BELAJAR</span><h2>Level ${level.level} · ${esc(level.name)}</h2><p class="muted">${progress.xp || 0} XP total · ${Math.max(0, level.next-(progress.xp||0))} XP menuju level berikutnya</p></div><div class="level-ring"><strong>${level.level}</strong><span>LEVEL</span></div><div class="level-progress"><div class="progress"><span style="width:${level.pct}%"></span></div><small>${level.pct}% ke level berikutnya</small></div></div>
   <div class="section-head"><div><h2>Bab tersedia</h2><p class="muted">Mulai dari Bab 1 atau pilih bab tertentu.</p></div><button class="btn" data-action="chapters">Lihat semua</button></div><div class="grid">${chapters.slice(0,6).map(chapterCard).join('')}</div>
@@ -596,24 +597,15 @@ function statsView() {
 }
 
 function aiView() {
-  let savedKey = readJSON(AI_KEY_STORE, '');
-  if (!savedKey && AI_DEFAULT_KEY) {
-    savedKey = AI_DEFAULT_KEY;
-    localStorage.setItem(AI_KEY_STORE, savedKey);
-  }
   app.innerHTML = `<div class="section-head"><div><div class="eyebrow">AI TUTOR</div><h1>Tanya AI tentang kosakata Korea.</h1><p class="muted">Tanyakan kosakata Korea apa pun. Jika kata ada di Bab 1–30, AI akan memakai konteks dataset; jika tidak ada, AI tetap dapat menjelaskannya.</p></div><button class="btn" data-action="home">Beranda</button></div>
-  <div class="two-col ai-layout">
-    <section class="card ai-chat-card">
-      <div class="ai-chat-head"><div><span class="eyebrow">EPS-TOPIK AI</span><h2>Pembimbing Kosakata</h2></div><span class="ai-status"><i></i> Siap</span></div>
-      <div id="aiMessages" class="ai-messages"><div class="ai-message ai-message-bot"><strong>AI Tutor</strong><p>Halo! Tanyakan sesuatu seperti:</p><div class="ai-suggestions"><button class="pill" data-ai-prompt="Apa arti 먹다?">Apa arti 먹다?</button><button class="pill" data-ai-prompt="Buatkan contoh kalimat untuk 공부하다.">Contoh kalimat</button><button class="pill" data-ai-prompt="Apa perbedaan 먹다 dan 식사하다?">Bandingkan kata</button><button class="pill" data-ai-prompt="Quiz saya tentang kosakata Bab 10.">Quiz Bab 10</button></div></div></div>
-      <form id="aiForm" class="ai-form"><textarea id="aiPrompt" class="ai-input" rows="3" maxlength="1200" placeholder="Contoh: Apa arti 배탈이 나다 dan buatkan contoh kalimatnya?"></textarea><button class="btn primary" id="aiSend" type="submit">Kirim →</button></form>
-    </section>
-    <aside class="card ai-settings-card"><div class="eyebrow">KONFIGURASI</div><h2>API AI</h2><p class="muted">Endpoint sudah disiapkan. Key lokal terisi otomatis untuk pengujian dan tetap disimpan di perangkat ini.</p><label class="ai-label">API key<input id="aiKey" class="search" type="password" autocomplete="off" placeholder="Masukkan API key" value="${esc(savedKey)}"></label><button class="btn" id="saveAiKey">Simpan API key</button><div class="ai-notice"><strong>Catatan keamanan</strong><p class="muted">Endpoint menggunakan API key melalui query parameter. Jika website dipublikasikan, key yang dipakai dari browser dapat terlihat oleh pengguna. Untuk deployment publik sebaiknya gunakan backend/proxy.</p></div><div class="ai-context"><strong>Konteks lokal + kosakata bebas</strong><p class="muted">AI menerima kosakata relevan dari 2.355 entri bila ditemukan. Kata di luar Bab 1–30 tetap bisa ditanyakan.</p></div></aside>
-  </div>`;
+  <section class="card ai-chat-card ai-chat-card-full">
+    <div class="ai-chat-head"><div><span class="eyebrow">EPS-TOPIK AI</span><h2>Pembimbing Kosakata</h2></div><span class="ai-status"><i></i> Siap</span></div>
+    <div id="aiMessages" class="ai-messages"><div class="ai-message ai-message-bot"><strong>AI Tutor</strong><p>Halo! Saya bisa membantu kosakata Korea dari Bab 1–30 maupun kata di luar dataset.</p><p>Coba tanyakan:</p><div class="ai-suggestions"><button class="pill" data-ai-prompt="Apa arti 먹다?">Apa arti 먹다?</button><button class="pill" data-ai-prompt="Buatkan contoh kalimat untuk 공부하다.">Contoh kalimat</button><button class="pill" data-ai-prompt="Apa perbedaan 먹다 dan 식사하다?">Bandingkan kata</button><button class="pill" data-ai-prompt="Apa arti 배탈이 나다?">Kata di luar Bab</button></div></div></div>
+    <form id="aiForm" class="ai-form"><textarea id="aiPrompt" class="ai-input" rows="3" maxlength="1200" placeholder="Contoh: Apa arti 배탈이 나다 dan buatkan contoh kalimatnya?"></textarea><button class="btn primary" id="aiSend" type="submit">Kirim →</button></form>
+  </section>`;
   bindActions();
-  document.getElementById('saveAiKey').onclick = () => { localStorage.setItem(AI_KEY_STORE, document.getElementById('aiKey').value.trim()); toastMsg('API key disimpan di perangkat ini'); };
   document.querySelectorAll('[data-ai-prompt]').forEach(b => b.onclick = () => { const input=document.getElementById('aiPrompt'); input.value=b.dataset.aiPrompt; input.focus(); });
-  document.getElementById('aiForm').onsubmit = async (e) => { e.preventDefault(); const input=document.getElementById('aiPrompt'); const prompt=input.value.trim(); if(!prompt || aiBusy) return; const key=document.getElementById('aiKey').value.trim(); if(!key){ toastMsg('Masukkan API key terlebih dahulu'); document.getElementById('aiKey').focus(); return; } localStorage.setItem(AI_KEY_STORE,key); addAiMessage('user',prompt); input.value=''; await askAiTutor(prompt,key); };
+  document.getElementById('aiForm').onsubmit = async (e) => { e.preventDefault(); const input=document.getElementById('aiPrompt'); const prompt=input.value.trim(); if(!prompt || aiBusy) return; const key=AI_DEFAULT_KEY; addAiMessage('user',prompt); input.value=''; await askAiTutor(prompt,key); };
 }
 
 function addAiMessage(role, text) {
@@ -623,8 +615,58 @@ function addAiMessage(role, text) {
   box.appendChild(el); box.scrollTop=box.scrollHeight;
 }
 function formatAiText(text) {
-  const safe=esc(text==null?'':String(text));
-  return safe.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  const source = String(text ?? '').replace(/\r\n?/g, '\n').trim();
+  if (!source) return '<p class="ai-empty">AI tidak mengirimkan teks jawaban.</p>';
+
+  const inline = (value) => {
+    let out = esc(value);
+    out = out.replace(/`([^`]+)`/g, '<code>$1</code>');
+    out = out.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+    out = out.replace(/__([^_\n]+)__/g, '<strong>$1</strong>');
+    out = out.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+    return out;
+  };
+
+  const lines = source.split('\n');
+  const html = [];
+  let paragraph = [];
+  let listType = null;
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    html.push(`<p>${inline(paragraph.join(' '))}</p>`);
+    paragraph = [];
+  };
+  const closeList = () => {
+    if (listType) { html.push(`</${listType}>`); listType = null; }
+  };
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) { flushParagraph(); closeList(); continue; }
+
+    let m = line.match(/^#{1,3}\s+(.+)$/);
+    if (m) { flushParagraph(); closeList(); html.push(`<h3>${inline(m[1])}</h3>`); continue; }
+    m = line.match(/^[-*•]\s+(.+)$/);
+    if (m) {
+      flushParagraph();
+      if (listType !== 'ul') { closeList(); html.push('<ul>'); listType='ul'; }
+      html.push(`<li>${inline(m[1])}</li>`);
+      continue;
+    }
+    m = line.match(/^\d+[.)]\s+(.+)$/);
+    if (m) {
+      flushParagraph();
+      if (listType !== 'ol') { closeList(); html.push('<ol>'); listType='ol'; }
+      html.push(`<li>${inline(m[1])}</li>`);
+      continue;
+    }
+    if (/^[-=]{3,}$/.test(line)) { flushParagraph(); closeList(); html.push('<hr>'); continue; }
+    closeList();
+    paragraph.push(line);
+  }
+  flushParagraph(); closeList();
+  return html.join('');
 }
 function findAiContext(prompt) {
   const q=prompt.toLowerCase();
