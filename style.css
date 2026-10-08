@@ -602,6 +602,15 @@ body{background:var(--bg)}
   }
 }
 
+
+.hero-ai-launcher{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding:13px 14px;border:1px solid var(--border);border-radius:12px;background:var(--bg)}
+.hero-ai-launcher>div{min-width:0;display:flex;flex-direction:column;gap:2px}
+.hero-ai-kicker{font-size:.68rem;font-weight:800;letter-spacing:.08em;color:var(--accent)}
+.hero-ai-launcher strong{font-size:.9rem}
+.hero-ai-launcher small{font-size:.75rem;color:var(--muted);line-height:1.35}
+.hero-ai-btn{white-space:nowrap;padding:9px 12px;font-size:.82rem}
+@media (max-width:640px){.hero-ai-launcher{align-items:flex-start;flex-direction:column}.hero-ai-btn{width:100%}}
+
 /* PDF download controls */
 
 @media (max-width: 640px){
