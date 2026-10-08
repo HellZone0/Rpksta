@@ -603,11 +603,12 @@ body{background:var(--bg)}
 }
 
 
-.hero-card{position:relative}
-.hero-ai-fab{position:absolute;right:24px;top:29%;width:48px;height:48px;display:grid;place-items:center;padding:0;border:1px solid rgba(255,255,255,.34);border-radius:50%;background:rgba(15,12,25,.38);color:#fff;cursor:pointer;transition:transform .18s ease,background .18s ease,border-color .18s ease}
-.hero-ai-fab:hover{transform:translateY(-2px);background:rgba(15,12,25,.58);border-color:rgba(255,255,255,.6)}
-.hero-ai-fab .ui-icon{width:22px;height:22px}
-@media (max-width:680px){.hero-ai-fab{right:20px;top:29%;width:46px;height:46px}.hero-card .source-note{padding-right:54px}}
+.ai-stats-launcher{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin:18px 0 12px;padding-right:2px;color:var(--muted);font-size:13px;font-weight:800;letter-spacing:.02em}
+.ai-stats-fab{width:48px;height:48px;display:grid;place-items:center;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--text);cursor:pointer;transition:transform .18s ease,background .18s ease,border-color .18s ease,color .18s ease}
+.ai-stats-fab:hover{transform:translateY(-2px);background:var(--blue-soft);border-color:var(--blue);color:var(--blue-dark)}
+.ai-stats-fab:active{transform:translateY(0)}
+.ai-stats-fab .ui-icon{width:22px;height:22px}
+@media (max-width:680px){.ai-stats-launcher{margin:16px 0 10px}.ai-stats-fab{width:46px;height:46px}}
 
 /* PDF download controls */
 
