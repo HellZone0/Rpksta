@@ -361,7 +361,7 @@ function startExamTimer(q) {
     }
   };
   update();
-  examTimerInterval = setInterval(update, 250);
+  examTimerInterval = setInterval(update, 500);
 }
 function render() {
   stopExamTimer();
@@ -405,31 +405,75 @@ function chapterList() {
   bindActions(); updateActiveNav();
 }
 
-function vocabView() {
+const VOCAB_PAGE = 60;
+function vocabBase() {
   const ch = state.chapter;
-  const base = (ch ? itemsFor(ch) : vocab).filter(v => state.source === 'Semua' || v.sumber === state.source);
-  const cats = [...new Set(base.map(v => v.kategori))];
-  if (state.cat !== 'Semua' && !cats.includes(state.cat)) state.cat = 'Semua';
+  return (ch ? itemsFor(ch) : vocab).filter(v => state.source === 'Semua' || v.sumber === state.source);
+}
+function vocabMatches(base) {
   const qSearch = state.search.trim().toLowerCase();
-  const list = base.filter(v => {
+  return base.filter(v => {
+    if (state.cat !== 'Semua' && v.kategori !== state.cat) return false;
+    if (state.status !== 'Semua' && mastery(v) !== state.status) return false;
+    if (!qSearch) return true;
     const chInfo = chapters[v.bab-1] || {};
     const hay = [v.korea, v.arti, v.kategori, chInfo.korea, chInfo.indonesia, `bab ${v.bab}`].join(' ').toLowerCase();
-    return (state.cat === 'Semua' || v.kategori === state.cat)
-      && (state.status === 'Semua' || mastery(v) === state.status)
-      && (!qSearch || hay.includes(qSearch));
+    return hay.includes(qSearch);
   });
+}
+// Only the list is repainted while typing or paging; the toolbar and inputs stay in place.
+function paintVocab() {
+  const listEl = document.getElementById('vocabList');
+  if (!listEl) return;
+  const ch = state.chapter;
+  const list = vocabMatches(vocabBase());
+  const limit = state.vocabLimit || VOCAB_PAGE;
+  const shown = list.slice(0, limit);
+  listEl.innerHTML = list.length
+    ? shown.map(v => vocabItem(v)).join('')
+    : `<div class="card empty">Kosakata dengan filter ini belum tersedia.</div>`;
+  bindActions(listEl);
+  const more = document.getElementById('vocabMore');
+  const remaining = list.length - shown.length;
+  if (more) {
+    more.innerHTML = remaining > 0
+      ? `<div class="vocab-more"><button class="btn" id="vocabLoadMore">Tampilkan ${Math.min(VOCAB_PAGE, remaining)} lagi <span class="muted">(${remaining} tersisa)</span></button></div>`
+      : '';
+    document.getElementById('vocabLoadMore')?.addEventListener('click', () => {
+      state.vocabLimit = limit + VOCAB_PAGE; paintVocab();
+    });
+  }
+  const notice = document.getElementById('vocabNotice');
+  if (notice) notice.innerHTML = `Menampilkan <strong>${list.length}</strong> kosakata${ch ? ` dari Bab ${ch}` : ''}. Status setiap kata tersimpan otomatis di perangkat.`;
+}
+function vocabView() {
+  const ch = state.chapter;
+  const base = vocabBase();
+  const cats = [...new Set(base.map(v => v.kategori))];
+  if (state.cat !== 'Semua' && !cats.includes(state.cat)) state.cat = 'Semua';
   const statusCounts = { semua:base.length, belum:base.filter(v=>mastery(v)==='belum').length, perlu:base.filter(v=>mastery(v)==='perlu').length, salah:base.filter(v=>mastery(v)==='salah').length, dikuasai:base.filter(v=>mastery(v)==='dikuasai').length };
   app.innerHTML = `<div class="section-head"><div><div class="eyebrow">KOSAKATA</div><h1>${ch ? `Bab ${ch} — ${esc(chapters[ch-1].korea)}` : 'Semua Kosakata'}</h1><p class="muted">${ch ? esc(chapters[ch-1].indonesia) : 'Kosakata EPS-TOPIK Bab 1–30'}</p></div><div class="section-actions">${ch ? `<a class="btn pdf-btn" href="pdf/EPS-TOPIK-Bab-${String(ch).padStart(2,'0')}-Kosakata.pdf" download="EPS-TOPIK-Bab-${String(ch).padStart(2,'0')}-Kosakata.pdf">↓ PDF Bab ${String(ch).padStart(2,'0')}</a>` : ''}<button class="btn" data-action="chapters">Daftar Bab</button></div></div>
   <div class="toolbar"><input id="vsearch" class="search" placeholder="Cari Korea, Indonesia, kategori, atau Bab..." value="${esc(state.search)}"><select id="vchapter" class="select"><option value="">Semua Bab</option>${chapters.map(c=>`<option value="${c.bab}" ${ch===c.bab?'selected':''}>Bab ${c.bab} — ${esc(c.korea)}</option>`).join('')}</select><select id="vsource" class="select"><option>Semua</option><option value="어휘" ${state.source==='어휘'?'selected':''}>어휘</option><option value="문화와 정보" ${state.source==='문화와 정보'?'selected':''}>문화와 정보</option></select><select id="vcat" class="select"><option>Semua</option>${cats.map(x=>`<option ${x===state.cat?'selected':''}>${esc(x)}</option>`).join('')}</select>${ch ? `<button class="btn primary" data-flash="${ch}">Kartu Bab Ini</button>` : ''}</div>
   <div class="mastery-pills"><button class="pill ${state.status==='Semua'?'active':''}" data-status="Semua">Semua <b>${statusCounts.semua}</b></button><button class="pill ${state.status==='belum'?'active':''}" data-status="belum">Belum <b>${statusCounts.belum}</b></button><button class="pill ${state.status==='perlu'?'active':''}" data-status="perlu">Perlu latihan <b>${statusCounts.perlu}</b></button><button class="pill ${state.status==='salah'?'active':''}" data-status="salah">Sering salah <b>${statusCounts.salah}</b></button><button class="pill ${state.status==='dikuasai'?'active':''}" data-status="dikuasai">Dikuasai <b>${statusCounts.dikuasai}</b></button></div>
-  <div class="notice">Menampilkan <strong>${list.length}</strong> kosakata${ch ? ` dari Bab ${ch}` : ''}. Status setiap kata tersimpan otomatis di perangkat.</div>
-  <div class="vocab-list">${list.length ? list.map(v => vocabItem(v)).join('') : `<div class="card empty">Kosakata dengan filter ini belum tersedia.</div>`}</div><p class="source-note">Data disusun dari entri 어휘/KOSAKATA Bab 1–30 serta istilah leksikal dari bagian 문화와 정보/Budaya & Informasi pada PDF EPS-TOPIK yang diberikan.</p>`;
-  document.getElementById('vsearch').addEventListener('input', e => { state.search = e.target.value; render(); const el=document.getElementById('vsearch'); if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);} });
+  <div class="notice" id="vocabNotice"></div>
+  <div class="vocab-list" id="vocabList"></div><div id="vocabMore"></div><p class="source-note">Data disusun dari entri 어휘/KOSAKATA Bab 1–30 serta istilah leksikal dari bagian 문화와 정보/Budaya & Informasi pada PDF EPS-TOPIK yang diberikan.</p>`;
+
+  let searchTimer = null;
+  document.getElementById('vsearch').addEventListener('input', e => {
+    const val = e.target.value;
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { state.search = val; state.vocabLimit = VOCAB_PAGE; paintVocab(); }, 180);
+  });
   document.getElementById('vchapter').addEventListener('change', e => { state.chapter = Number(e.target.value) || null; state.cat='Semua'; state.status='Semua'; render(); });
   document.getElementById('vsource').addEventListener('change', e => { state.source=e.target.value; state.cat='Semua'; render(); });
-  document.getElementById('vcat').addEventListener('change', e => { state.cat=e.target.value; render(); });
-  document.querySelectorAll('[data-status]').forEach(b => b.onclick = () => { state.status=b.dataset.status; render(); });
-  bindActions(); updateActiveNav();
+  document.getElementById('vcat').addEventListener('change', e => { state.cat=e.target.value; state.vocabLimit = VOCAB_PAGE; paintVocab(); });
+  document.querySelectorAll('[data-status]').forEach(b => b.onclick = () => {
+    state.status = b.dataset.status; state.vocabLimit = VOCAB_PAGE;
+    document.querySelectorAll('[data-status]').forEach(x => x.classList.toggle('active', x === b));
+    paintVocab();
+  });
+  bindActions(app); updateActiveNav();
+  paintVocab();
 }
 function vocabItem(v) {
   const s = wordStats(v);
@@ -703,14 +747,14 @@ async function askAiTutor(userPrompt,key) {
 }
 
 function updateActiveNav(){document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));}
-function bindActions(){
-  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>show('vocab',{chapter:b.dataset.open}));
-  document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{if(b.dataset.status){state.status=b.dataset.status;if(b.dataset.status!=='Semua')state.chapter=null;} if(b.dataset.mode){state.pendingQuizMode=b.dataset.mode;} show(b.dataset.action);});
-  document.querySelectorAll('[data-flash]').forEach(b=>b.onclick=()=>{state.chapter=Number(b.dataset.flash);state.flashIndex=0;state.flashShow=false;state.flashPool=null;show('flashcards');});
-  document.querySelectorAll('[data-speak]').forEach(b=>b.onclick=()=>speakKorean(decodeURIComponent(b.dataset.speak)));
-  document.querySelectorAll('[data-favorite]').forEach(b=>b.onclick=()=>{const key=decodeURIComponent(b.dataset.favorite);progress.favorites[key]=!progress.favorites[key];save();render();toastMsg(progress.favorites[key]?'Disimpan ke favorit':'Dihapus dari favorit');});
-  document.querySelectorAll('[data-oneflash]').forEach(b=>b.onclick=()=>{const key=decodeURIComponent(b.dataset.oneflash);const found=vocab.find(v=>wordKey(v)===key);if(found){state.chapter=found.bab;state.flashPool=[found];state.flashIndex=0;state.flashShow=false;show('flashcards');}});
-  document.querySelectorAll('[data-review-flash]').forEach(b=>b.onclick=()=>{const key=decodeURIComponent(b.dataset.reviewFlash);const found=vocab.find(v=>wordKey(v)===key);if(found){state.chapter=found.bab;state.flashPool=[found];state.flashIndex=0;state.flashShow=false;show('flashcards');}});
+function bindActions(root = document){
+  root.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>show('vocab',{chapter:b.dataset.open}));
+  root.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{if(b.dataset.status){state.status=b.dataset.status;if(b.dataset.status!=='Semua')state.chapter=null;} if(b.dataset.mode){state.pendingQuizMode=b.dataset.mode;} show(b.dataset.action);});
+  root.querySelectorAll('[data-flash]').forEach(b=>b.onclick=()=>{state.chapter=Number(b.dataset.flash);state.flashIndex=0;state.flashShow=false;state.flashPool=null;show('flashcards');});
+  root.querySelectorAll('[data-speak]').forEach(b=>b.onclick=()=>speakKorean(decodeURIComponent(b.dataset.speak)));
+  root.querySelectorAll('[data-favorite]').forEach(b=>b.onclick=()=>{const key=decodeURIComponent(b.dataset.favorite);progress.favorites[key]=!progress.favorites[key];save();render();toastMsg(progress.favorites[key]?'Disimpan ke favorit':'Dihapus dari favorit');});
+  root.querySelectorAll('[data-oneflash]').forEach(b=>b.onclick=()=>{const key=decodeURIComponent(b.dataset.oneflash);const found=vocab.find(v=>wordKey(v)===key);if(found){state.chapter=found.bab;state.flashPool=[found];state.flashIndex=0;state.flashShow=false;show('flashcards');}});
+  root.querySelectorAll('[data-review-flash]').forEach(b=>b.onclick=()=>{const key=decodeURIComponent(b.dataset.reviewFlash);const found=vocab.find(v=>wordKey(v)===key);if(found){state.chapter=found.bab;state.flashPool=[found];state.flashIndex=0;state.flashShow=false;show('flashcards');}});
 }
 
 document.getElementById('closeInfo').onclick=closeInfoModal;

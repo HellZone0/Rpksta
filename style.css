@@ -755,3 +755,16 @@ body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-seri
   .bottom-nav button{font-size:10px}.bottom-nav .ui-icon{width:18px;height:18px}.toast{max-width:calc(100vw - 24px)}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+/* ==========================================================
+   PERF + LAYOUT FIXES (study-app v2)
+   - Long vocabulary lists skip rendering off-screen rows.
+   - Labels, fields and actions no longer crowd each other.
+   ========================================================== */
+.vocab-item{content-visibility:auto;contain-intrinsic-size:auto 120px}
+.vocab-more{display:flex;justify-content:center;margin:16px 0 8px}
+.quiz-wrap label{display:grid;gap:7px;margin-top:14px}
+.quiz-wrap .two-col{gap:14px}
+.quiz-wrap .notice{margin-top:16px}
+.quiz-wrap .actions{margin-top:20px}
+.creator-modal .social-actions{margin-bottom:14px}
