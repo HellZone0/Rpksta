@@ -151,8 +151,8 @@ function findAiContext(prompt) {
 
 function buildAiPrompt(userPrompt) {
   const context=findAiContext(userPrompt);
-  const contextText=context.length ? context.map(v=>`- ${v.korea} — ${v.arti} — ${v.kategori} — Bab ${v.bab} — ${v.sumber}`).join('\n') : 'Tidak ada kecocokan langsung di dataset Bab 1–30.';
-  return `Kamu adalah AI Tutor kosakata Korea untuk pelajar Indonesia yang sedang belajar EPS-TOPIK.\n\nATURAN UTAMA:\n- Jawab dalam bahasa Indonesia dan pertahankan kata Korea dalam Hangul.\n- Kamu BOLEH menjawab kosakata Korea apa pun, termasuk kata yang TIDAK ADA di Bab 1–30. Jangan menolak hanya karena kata tersebut tidak ada di dataset lokal.\n- Jika kata ditemukan pada konteks lokal, sebutkan bahwa kata tersebut ada di dataset dan berikan Bab, kategori, serta arti yang tersedia.\n- Jika kata tidak ditemukan pada konteks lokal, jelaskan berdasarkan pengetahuan bahasa Korea yang kamu miliki, tetapi JANGAN mengklaim kata itu berasal dari dataset EPS-TOPIK ini.\n- Jika pengguna meminta contoh kalimat, berikan contoh Korea + terjemahan Indonesia yang natural dan sesuai level belajar.\n- Jika membandingkan kata, jelaskan perbedaan arti, nuansa, dan penggunaan secara sederhana.\n- Untuk pertanyaan di luar kosakata/bahasa Korea, jawab singkat dan arahkan kembali ke pembelajaran Korea.\n\nKonteks dataset lokal Bab 1–30:\n${contextText}\n\nPertanyaan pengguna:\n${userPrompt}`;
+  const contextText=context.length ? context.map(v=>`- ${v.korea} — ${v.arti} — ${v.kategori} — Bab ${v.bab} — ${v.sumber}`).join('\n') : 'Tidak ada kecocokan langsung di dataset Bab 1–60.';
+  return `Kamu adalah AI Tutor kosakata Korea untuk pelajar Indonesia yang sedang belajar EPS-TOPIK.\n\nATURAN UTAMA:\n- Jawab dalam bahasa Indonesia dan pertahankan kata Korea dalam Hangul.\n- Kamu BOLEH menjawab kosakata Korea apa pun, termasuk kata yang TIDAK ADA di Bab 1–60. Jangan menolak hanya karena kata tersebut tidak ada di dataset lokal.\n- Jika kata ditemukan pada konteks lokal, sebutkan bahwa kata tersebut ada di dataset dan berikan Bab, kategori, serta arti yang tersedia.\n- Jika kata tidak ditemukan pada konteks lokal, jelaskan berdasarkan pengetahuan bahasa Korea yang kamu miliki, tetapi JANGAN mengklaim kata itu berasal dari dataset EPS-TOPIK ini.\n- Jika pengguna meminta contoh kalimat, berikan contoh Korea + terjemahan Indonesia yang natural dan sesuai level belajar.\n- Jika membandingkan kata, jelaskan perbedaan arti, nuansa, dan penggunaan secara sederhana.\n- Untuk pertanyaan di luar kosakata/bahasa Korea, jawab singkat dan arahkan kembali ke pembelajaran Korea.\n\nKonteks dataset lokal Bab 1–60:\n${contextText}\n\nPertanyaan pengguna:\n${userPrompt}`;
 }
 
 function extractAiText(data) {
@@ -247,7 +247,7 @@ const SETTINGS = 'epsTopikSettings';
 
 const CREATOR_SEEN = 'epsTopikCreatorSeen';
 
-const DATA_VERSION = '20261002-feature-pack-10';
+const DATA_VERSION = '20261019-buku2-bab31-60';
 
 const AI_ENDPOINT = 'https://api.kyzzz.xyz/api/ai/chatgpt';
 
@@ -304,7 +304,9 @@ const S = {
   result: null,
   setup: { mode: 'campuran', count: 10, chapter: '' },
   kq: { chapter: null, search: '', status: 'Semua', source: 'Semua', limit: 50 },
-  deck: null
+  deck: null,
+  match: null,
+  matchSetup: { chapter: '', pairs: 6 }
 };
 
 const MODES = [
@@ -313,7 +315,7 @@ const MODES = [
   { id: 'sulit', label: 'Kata sulit', desc: 'Hanya kata yang sering salah.' },
   { id: 'ujian', label: 'Simulasi ujian', desc: 'Tanpa umpan balik sampai selesai.' }
 ];
-const TAB_OF = { home: 'home', bab: 'bab', kosakata: 'kosakata', latihan: 'latihan', kartu: 'lainnya', statistik: 'lainnya', ai: 'lainnya', lainnya: 'lainnya', tentang: 'lainnya' };
+const TAB_OF = { pasangkan: 'lainnya', home: 'home', bab: 'bab', kosakata: 'kosakata', latihan: 'latihan', kartu: 'lainnya', statistik: 'lainnya', ai: 'lainnya', lainnya: 'lainnya', tentang: 'lainnya' };
 const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
 // ---------- Helpers ----------
@@ -351,6 +353,7 @@ function render() {
   const r = currentRoute();
   const onRun = r.name === 'latihan' && r.arg === 'run';
   if (!onRun && S.quiz) { endQuizTimer(); S.quiz = null; }
+  if (r.name !== 'pasangkan' && S.match) { stopMatchTimer(); S.match = null; }
   if (onRun && !S.quiz) return go('#latihan');
   if (r.name === 'latihan' && r.arg === 'result' && !S.result) return go('#latihan');
 
@@ -372,6 +375,7 @@ function render() {
     case 'ai': html = aiView(); break;
     case 'lainnya': html = menuView(); break;
     case 'tentang': html = aboutView(); break;
+    case 'pasangkan': html = matchView(); break;
     default: html = homeView();
   }
   view.innerHTML = html;
@@ -412,25 +416,30 @@ function homeView() {
       <h2 class="sec">Lanjutkan</h2>
       ${next ? `<a class="rowlink" href="#kosakata/${next.bab}"><span>Bab ${next.bab} · ${esc(next.korea)}</span><small>${chapterDone(next.bab)} dari ${itemsFor(next.bab).length}</small></a>` : ''}
       ${hard ? `<button class="rowlink" data-act="sulit"><span>Kata sulit</span><small>${hard} kata</small></button>` : ''}
+      <a class="rowlink" href="#pasangkan"><span>Pasangkan kata</span><small>Permainan singkat</small></a>
       <a class="rowlink" href="#kartu" data-act="kartu"><span>Kartu belajar</span><small>Hafalkan satu per satu</small></a>
     </section>`;
 }
 
 // ---------- Bab ----------
+function pdfName(bab) { return `EPS-TOPIK-Bab-${String(bab).padStart(2, '0')}-Kosakata.pdf`; }
 function babView() {
   const rows = chapters.map(c => {
     const total = itemsFor(c.bab).length;
     const done = chapterDone(c.bab);
     const pct = total ? Math.round(done / total * 100) : 0;
-    return `<a class="chrow" href="#kosakata/${c.bab}">
-      <span class="chnum num">${String(c.bab).padStart(2, '0')}</span>
-      <span class="chtext"><b>${esc(c.korea)}</b><small>${esc(c.indonesia)}</small>
-        <span class="bar thin"><i style="width:${pct}%"></i></span></span>
-      <span class="chcount num">${done}/${total}</span>
-    </a>`;
+    return `<div class="chrow">
+      <a class="chmain" href="#kosakata/${c.bab}">
+        <span class="chnum num">${String(c.bab).padStart(2, '0')}</span>
+        <span class="chtext"><b>${esc(c.korea)}</b><small>${esc(c.indonesia)}</small>
+          <span class="bar thin"><i style="width:${pct}%"></i></span></span>
+        <span class="chcount num">${done}/${total}</span>
+      </a>
+      <a class="pdflink" href="pdf/${pdfName(c.bab)}" download aria-label="Unduh PDF Bab ${c.bab}">PDF</a>
+    </div>`;
   }).join('');
   return `
-    <header class="pagehead"><h1>Bab</h1><p class="muted">Pilih bab untuk melihat kosakatanya.</p></header>
+    <header class="pagehead"><h1>Bab</h1><p class="muted">Pilih bab untuk melihat kosakatanya, atau unduh PDF-nya.</p></header>
     <div class="chlist">${rows}</div>`;
 }
 
@@ -466,6 +475,7 @@ function wordRow(v) {
 function kosakataView() {
   return `
     <header class="pagehead"><h1>Kosakata</h1><p class="muted" id="kcount"></p></header>
+    ${S.kq.chapter ? `<a class="btn wide pdf-btn" href="pdf/${pdfName(S.kq.chapter)}" download>Unduh PDF Bab ${S.kq.chapter}</a>` : ''}
     <div class="filters">
       <input class="field" type="search" data-field="ksearch" placeholder="Cari kata, arti, atau bab" value="${esc(S.kq.search)}" autocomplete="off">
       <div class="pair">
@@ -769,6 +779,7 @@ function menuView() {
     <header class="pagehead"><h1>Lainnya</h1></header>
     <nav class="menu">
       <a href="#kartu" data-act="kartu"><b>Kartu belajar</b><span>Hafalkan kata satu per satu</span></a>
+      <a href="#pasangkan"><b>Pasangkan kata</b><span>Permainan mencocokkan kata dan arti</span></a>
       <a href="#statistik"><b>Statistik</b><span>Progres, pencapaian, dan data</span></a>
       <a href="#ai"><b>AI Tutor</b><span>Tanya arti dan contoh kalimat</span></a>
       <button data-act="theme"><b>Tampilan ${settings.theme === 'dark' ? 'gelap' : 'terang'}</b><span>Ketuk untuk mengganti</span></button>
@@ -778,7 +789,7 @@ function menuView() {
 function aboutView() {
   return `
     <header class="pagehead"><h1>Tentang</h1></header>
-    <p>Aplikasi latihan kosakata EPS-TOPIK Bab 1–30. Dibuat oleh Muhammad Ahda.</p>
+    <p>Aplikasi latihan kosakata EPS-TOPIK Bab 1–60. Dibuat oleh Muhammad Ahda.</p>
     <p class="muted">Terima kasih sudah menggunakan aplikasi ini. Selamat belajar.</p>
     <nav class="menu">
       <a href="https://www.instagram.com/minns0" target="_blank" rel="noopener noreferrer"><b>Instagram</b><span>@minns0</span></a>
@@ -790,7 +801,7 @@ function aboutView() {
 function aiView() {
   const examples = ['Apa arti 먹다?', 'Beri contoh kalimat dengan 배탈이 나다', 'Apa beda 누나 dan 언니?'];
   return `
-    <header class="pagehead"><h1>AI Tutor</h1><p class="muted">Tanyakan kosakata Korea apa pun. Kata dari Bab 1–30 dipakai sebagai konteks bila ada.</p></header>
+    <header class="pagehead"><h1>AI Tutor</h1><p class="muted">Tanyakan kosakata Korea apa pun. Kata dari Bab 1–60 dipakai sebagai konteks bila ada.</p></header>
     <div class="chips">${examples.map(p => `<button class="chip" data-act="aiprompt" data-val="${enc(p)}">${esc(p)}</button>`).join('')}</div>
     <div id="aiMessages" class="thread">
       <div class="ai-message ai-message-bot"><strong>AI Tutor</strong><p>Halo. Ketik pertanyaanmu di bawah.</p></div>
@@ -866,6 +877,19 @@ const handlers = {
     progress.quizHistory = [];
     save(); render(); toastMsg('Statistik direset.');
   },
+  mpairs(t) { S.matchSetup.pairs = Number(t.dataset.val); render(); },
+  mstart() {
+    const ch = S.matchSetup.chapter ? Number(S.matchSetup.chapter) : null;
+    const m = buildMatch(ch, S.matchSetup.pairs);
+    if (!m) { toastMsg('Kata di bab ini belum cukup. Pilih bab lain.'); return; }
+    stopMatchTimer();
+    S.match = m;
+    startMatchTimer();
+    go('#pasangkan');
+  },
+  mtile(t) { matchTile(Number(t.dataset.val)); },
+  mquit() { if (confirm('Keluar dari permainan ini?')) { stopMatchTimer(); S.match = null; render(); } },
+  mreset() { stopMatchTimer(); S.match = null; render(); },
   aiprompt(t) { const i = document.getElementById('aiPrompt'); if (i) { i.value = dec(t.dataset.val); i.focus(); } }
 };
 
@@ -890,6 +914,7 @@ document.addEventListener('change', e => {
   else if (f === 'kstatus') { S.kq.status = e.target.value; S.kq.limit = 50; paintKList(); }
   else if (f === 'ksource') { S.kq.source = e.target.value; S.kq.limit = 50; paintKList(); }
   else if (f === 'lchapter') S.setup.chapter = e.target.value;
+  else if (f === 'mchapter') S.matchSetup.chapter = e.target.value;
   else if (f === 'import') importFile(e.target.files[0]);
 });
 document.addEventListener('submit', e => {
@@ -902,6 +927,124 @@ document.addEventListener('submit', e => {
   input.value = '';
   askAiTutor(prompt, AI_DEFAULT_KEY);
 });
+
+// ---------- Pasangkan kata (permainan) ----------
+function buildMatch(chapter, pairs) {
+  let base = chapter ? itemsFor(chapter) : vocab;
+  const short = base.filter(v => v.arti.length <= 24 && v.korea.length <= 10);
+  if (short.length >= pairs) base = short;
+  const used = new Set();
+  const picked = [];
+  for (const v of shuffle(base)) {
+    if (used.has(v.arti) || used.has(v.korea)) continue;
+    used.add(v.arti); used.add(v.korea);
+    picked.push(v);
+    if (picked.length === pairs) break;
+  }
+  if (picked.length < pairs) return null;
+  const raw = [];
+  picked.forEach((v, i) => {
+    raw.push({ pair: i, text: v.korea });
+    raw.push({ pair: i, text: v.arti });
+  });
+  const tiles = shuffle(raw).map((t, id) => ({ ...t, id, state: 'hidden' }));
+  return { tiles, pairs, matched: 0, moves: 0, open: [], lock: false, done: false, newBest: false, elapsed: 0, startedAt: Date.now(), timerId: null, chapter };
+}
+function startMatchTimer() {
+  const m = S.match;
+  if (!m) return;
+  m.startedAt = Date.now();
+  m.timerId = setInterval(() => {
+    if (S.match !== m || m.done) return;
+    m.elapsed = Math.floor((Date.now() - m.startedAt) / 1000);
+    const el = document.getElementById('mtime');
+    if (el) el.textContent = fmtTime(m.elapsed * 1000);
+  }, 500);
+}
+function stopMatchTimer() { if (S.match && S.match.timerId) { clearInterval(S.match.timerId); S.match.timerId = null; } }
+function matchTile(id) {
+  const m = S.match;
+  if (!m || m.lock || m.done) return;
+  const t = m.tiles[id];
+  if (!t || t.state !== 'hidden') return;
+  t.state = 'open';
+  m.open.push(id);
+  if (m.open.length === 2) {
+    m.moves++;
+    const [a, b] = m.open.map(i => m.tiles[i]);
+    if (a.pair === b.pair) {
+      a.state = 'done'; b.state = 'done';
+      m.matched++;
+      m.open = [];
+      if (m.matched === m.pairs) { finishMatch(); return render(); }
+    } else {
+      m.lock = true;
+      setTimeout(() => {
+        if (S.match !== m) return;
+        a.state = 'hidden'; b.state = 'hidden';
+        m.open = []; m.lock = false;
+        render();
+      }, 650);
+    }
+  }
+  render();
+}
+function finishMatch() {
+  const m = S.match;
+  stopMatchTimer();
+  m.done = true;
+  m.elapsed = Math.floor((Date.now() - m.startedAt) / 1000);
+  progress.matchBest = progress.matchBest || {};
+  const old = progress.matchBest[m.pairs];
+  const better = !old || m.elapsed < old.sec || (m.elapsed === old.sec && m.moves < old.moves);
+  if (better) progress.matchBest[m.pairs] = { sec: m.elapsed, moves: m.moves };
+  m.newBest = better;
+  progress.matchPlayed = (progress.matchPlayed || 0) + 1;
+  awardXp(m.pairs * 2);
+  recordStudyDay();
+  save();
+}
+function matchView() {
+  const m = S.match;
+  if (!m) {
+    const best = Object.entries(progress.matchBest || {}).sort((a, b) => Number(a[0]) - Number(b[0]));
+    const bestLines = best.length
+      ? best.map(([p, b]) => `<div class="rowlink static"><span>${p} pasangan</span><small>${fmtTime(b.sec * 1000)} · ${b.moves} langkah</small></div>`).join('')
+      : `<p class="muted">Belum ada rekor. Mainkan dulu untuk mencatat rekor.</p>`;
+    return `
+      <header class="pagehead"><h1>Pasangkan kata</h1><p class="muted">Cocokkan kata Korea dengan artinya. Makin cepat dan makin sedikit langkah, makin baik.</p></header>
+      <h2 class="sec">Jumlah pasangan</h2>
+      <div class="seg">${[6, 8].map(n => `<button class="seg-btn" aria-pressed="${S.matchSetup.pairs === n}" data-act="mpairs" data-val="${n}">${n}</button>`).join('')}</div>
+      <label class="lbl top">Bab<select class="field" data-field="mchapter">${chapterOptions(S.matchSetup.chapter)}</select></label>
+      <div class="actions"><button class="btn primary wide" data-act="mstart">Mulai</button></div>
+      <h2 class="sec">Rekor</h2>
+      <div class="rowlist">${bestLines}</div>`;
+  }
+  const cols = m.pairs === 6 ? 'c3' : 'c4';
+  const tiles = m.tiles.map(t => {
+    const locked = t.state !== 'hidden' || m.lock || m.done;
+    const label = t.state === 'hidden' ? '' : esc(t.text);
+    return `<button class="tile ${t.state}" data-act="mtile" data-val="${t.id}" ${locked ? 'disabled' : ''} aria-label="${t.state === 'hidden' ? 'Kartu tertutup' : esc(t.text)}">${label}</button>`;
+  }).join('');
+  const head = m.done
+    ? `<section class="result">
+         <p class="kicker">Selesai</p>
+         <p class="result-num num">${fmtTime(m.elapsed * 1000)}</p>
+         <p>${m.moves} langkah · ${m.pairs} pasangan</p>
+         ${m.newBest ? '<p class="achv-new">Rekor baru</p>' : ''}
+       </section>
+       <div class="actions col">
+         <button class="btn primary wide" data-act="mstart">Main lagi</button>
+         <button class="btn wide" data-act="mreset">Ubah pengaturan</button>
+         <a class="btn wide" href="#lainnya">Kembali</a>
+       </div>`
+    : `<div class="runhead">
+         <span class="num">Langkah ${m.moves}</span>
+         <span class="num" id="mtime">${fmtTime(m.elapsed * 1000)}</span>
+         <button class="link" data-act="mquit">Keluar</button>
+       </div>`;
+  return `${head}<div class="mgrid ${cols}">${tiles}</div>`;
+}
 
 // ---------- Boot ----------
 async function init() {
