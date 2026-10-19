@@ -264,3 +264,15 @@ textarea.field{resize:vertical;min-height:88px}
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important}
 }
+
+/* v6b: contoh kalimat, pemisah buku */
+.exbox{margin-top:10px}
+.exbox:empty{display:none}
+.ex-item{padding:8px 0;border-top:1px solid var(--line)}
+.ex-ko{margin:0;font-size:16px;font-weight:600}
+.ex-ko .link{margin-left:8px;font-size:13px;padding:2px 0}
+.ex-id{margin:2px 0 0;color:var(--muted);font-size:14px}
+.ex-note{font-size:12px;margin:6px 0 0}
+.book-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:22px}
+.book-head small{font-weight:400;color:var(--muted);font-size:12px}
+.flash + .row + .exbox,.flash ~ .exbox{text-align:left}

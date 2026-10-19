@@ -1,5 +1,5 @@
-const CACHE = 'eps-topik-v6-20261019';
-const CORE = ['./', './index.html', './style.css?v=20261019-v6', './app.js?v=20261019-v6', './data/chapters.json', './data/vocabulary.json', './manifest.webmanifest'];
+const CACHE = 'eps-topik-v6b-gemini-20261019';
+const CORE = ['./', './index.html', './style.css?v=20261019-gemini-v1', './app.js?v=20261019-gemini-v1', './data/chapters.json', './data/vocabulary.json', './manifest.webmanifest'];
 const SHELL = ['/', '/index.html', '/style.css', '/app.js'];
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
