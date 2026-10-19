@@ -1,0 +1,10 @@
+{
+  "name": "EPS-TOPIK 한국어 어휘 퀴즈",
+  "short_name": "EPS-TOPIK Quiz",
+  "lang": "id-ID",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#F4F5F1",
+  "theme_color": "#2D5E52",
+  "description": "Latihan kosakata EPS-TOPIK Bab 1–60."
+}
